@@ -88,7 +88,9 @@ type Action =
   | { type: "FETCH_DONE" }
   | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: string }
   | { type: "START_MATRIX" }
-  | { type: "STOP_MATRIX" };
+  | { type: "STOP_MATRIX" }
+  // Appends neofetch output after the welcome banner on initial boot — no prompt echo.
+  | { type: "BOOT_NEOFETCH"; lines: Line[] };
 
 const INITIAL_CWD = [...HOME_SEGMENTS];
 
@@ -443,6 +445,9 @@ function reducer(
       };
     }
 
+    case "BOOT_NEOFETCH":
+      return { ...state, output: [...state.output, ...action.lines] };
+
     default:
       return state;
   }
@@ -617,6 +622,8 @@ export default function Terminal({
   const containerRef = useRef<HTMLDivElement>(null);
   const isFirstScrollRef = useRef<boolean>(true);
   const isInitialMount = useRef(true);
+  // Tracks whether the boot neofetch has already fired — prevents double-dispatch on re-renders.
+  const hasBootedRef = useRef<boolean>(false);
 
   // Lazy AudioContext ref — only created after first user gesture.
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -649,6 +656,41 @@ export default function Terminal({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Boot neofetch: runs once after hydration. Detects the active lang from storage/navigator
+  // (mirroring detectLang) so the output matches what the lang effect will settle on,
+  // even though both effects run in the same commit. No prompt echo — BOOT_NEOFETCH
+  // appends lines directly. hasBootedRef prevents re-dispatch on StrictMode double-invoke.
+  useEffect(() => {
+    if (hasBootedRef.current) return;
+    hasBootedRef.current = true;
+
+    const neofetchCmd = commandRegistry.get("neofetch");
+    if (!neofetchCmd) return;
+
+    // Resolve the language that the lang-detection effect will also settle on.
+    const bootLang = detectLang(defaultLang);
+    // defaultLang is typed as Lang ("es"|"en"), not user-controlled
+    // eslint-disable-next-line security/detect-object-injection
+    const bootFs = fsByLang[bootLang] ?? fsByLang[defaultLang];
+
+    const tFn = makeT(bootLang);
+    const ctx = {
+      cwd: INITIAL_CWD,
+      prevCwd: null,
+      history: [],
+      fs: bootFs,
+      skillsData,
+      lang: bootLang,
+      t: tFn,
+      endpoints,
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+    };
+
+    const { lines } = neofetchCmd.run([], ctx);
+    const separator: Line = { kind: "plain", segments: [{ text: "" }] };
+    dispatch({ type: "BOOT_NEOFETCH", lines: [...lines, separator] });
+  }, []); // one-shot boot: deps intentionally empty — hasBootedRef guards against re-dispatch
 
   useEffect(() => {
     const behavior = isFirstScrollRef.current ? "auto" : "smooth";
