@@ -1,5 +1,7 @@
 package dev.notpelos.cv.controller;
 
+import dev.notpelos.cv.config.RateLimitConfig;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,6 +18,20 @@ class CvPdfControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private RateLimitConfig rateLimitConfig;
+
+    /**
+     * Clear the shared in-process bucket cache before each test. The
+     * RateLimitConfig bean is a singleton, so previous tests (notably
+     * RateLimitTest) can leave 127.0.0.1's bucket exhausted, causing
+     * subsequent MockMvc calls to receive 429.
+     */
+    @BeforeEach
+    void clearRateLimitBuckets() {
+        rateLimitConfig.getCache().invalidateAll();
+    }
 
     @Test
     void pdf_defaultLang_returns200WithPdfContentType() throws Exception {

@@ -2,6 +2,7 @@ package dev.notpelos.cv.controller;
 
 import dev.notpelos.cv.config.RateLimitConfig;
 import io.github.bucket4j.Bucket;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,6 +30,16 @@ class RateLimitTest {
 
     @Autowired
     private RateLimitConfig rateLimitConfig;
+
+    /**
+     * Clear the shared bucket cache after each test so other test classes
+     * (CvPdfControllerTest, etc.) don't inherit exhausted buckets via the
+     * singleton RateLimitConfig bean.
+     */
+    @AfterEach
+    void clearRateLimitBuckets() {
+        rateLimitConfig.getCache().invalidateAll();
+    }
 
     @Test
     void rateLimitAllows60Requests() {
