@@ -1,0 +1,22 @@
+{
+  "name": "interactive-cv",
+  "version": "0.0.1",
+  "private": true,
+  "description": "CV interactivo de NotPelos — terminal Tokyo Night + Spring Boot showcase. Free tier end-to-end.",
+  "author": "Ismael Sánchez Aguilera Repullo <ismaelprr10@gmail.com>",
+  "license": "MIT",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:worker": "pnpm --filter worker dev",
+    "build:web": "pnpm --filter web build",
+    "build:worker": "pnpm --filter worker build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
