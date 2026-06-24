@@ -53,12 +53,9 @@ jobs:
 
       - name: Build (astro build)
         # PUBLIC_* env vars se inyectan en el bundle (Astro las lee en build time).
-        # Worker URL es el subdomain del account xpelos23. API URL queda vacío
-        # hasta que Fase 9B (Fly.io) esté desplegado — el frontend usa fallback
-        # estático para download cv.pdf.
         env:
           PUBLIC_WORKER_URL: "https://notpelos-api.xpelos23.workers.dev"
-          PUBLIC_API_URL: ""
+          PUBLIC_API_URL: "https://notpelos-cv-api.fly.dev"
         run: pnpm --filter web build
 
       - name: Audit de dependencias (nivel high)
