@@ -9,10 +9,19 @@ const { lang } = Astro.props;
 
 const allProjects = await getCollection("projects");
 
-// Top 3 by order (1 = most sellable): AuthServiceGame, Discord-Bot, robo_contenedores
+// Top 3 by order (1 = most sellable): AuthServiceGame, NosRaids, Discord-Bot
 const projects = allProjects
   .filter((p) => p.data.lang === lang && p.data.order <= 3)
   .sort((a, b) => a.data.order - b.data.order);
+
+// Warn at build time if a project exposes neither repo nor liveUrl.
+for (const p of projects) {
+  if (!p.data.repo && !p.data.liveUrl) {
+    console.warn(
+      `[Projects] "${p.data.title}" (${p.data.lang}) has no repo or liveUrl — card will render without links.`
+    );
+  }
+}
 ---
 
 <section aria-labelledby="projects-heading">
@@ -40,15 +49,30 @@ const projects = allProjects
           ))}
         </ul>
 
-        <a
-          href={p.data.repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-xs text-tn-magenta hover:text-tn-blue transition-colors mt-auto"
-          aria-label={`${lang === "es" ? "Repositorio de" : "Repository for"} ${p.data.title}`}
-        >
-          {lang === "es" ? "ver repo →" : "view repo →"}
-        </a>
+        <div class="flex flex-wrap gap-3 mt-auto">
+          {p.data.liveUrl && (
+            <a
+              href={p.data.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-tn-green hover:text-tn-blue transition-colors"
+              aria-label={`${lang === "es" ? "Demo en vivo de" : "Live demo for"} ${p.data.title}`}
+            >
+              {lang === "es" ? "demo en vivo →" : "live demo →"}
+            </a>
+          )}
+          {p.data.repo && (
+            <a
+              href={p.data.repo}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs text-tn-magenta hover:text-tn-blue transition-colors"
+              aria-label={`${lang === "es" ? "Repositorio de" : "Repository for"} ${p.data.title}`}
+            >
+              {lang === "es" ? "ver repo →" : "view repo →"}
+            </a>
+          )}
+        </div>
       </li>
     ))}
   </ul>

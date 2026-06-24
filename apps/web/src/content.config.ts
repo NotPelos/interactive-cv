@@ -31,7 +31,8 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     pitch: z.string(),
-    repo: z.string().url(),
+    repo: z.string().url().optional(),
+    liveUrl: z.string().url().optional(),
     stack: z.array(z.string()),
     lang: langEnum,
     order: z.number(),

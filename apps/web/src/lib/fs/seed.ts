@@ -289,15 +289,20 @@ export function buildFsFromContent(
   for (const entry of sortedProj) {
     const title = (entry.data["title"] as string) ?? "";
     const pitch = (entry.data["pitch"] as string) ?? "";
-    const repo = (entry.data["repo"] as string) ?? "";
+    const repo = entry.data["repo"] as string | undefined;
+    const liveUrl = entry.data["liveUrl"] as string | undefined;
     const stack = (entry.data["stack"] as string[]) ?? [];
     const body = entry.body ?? "";
+
+    const linkLines: string[] = [];
+    if (repo) linkLines.push(`Repo: [${repo}](${repo})`);
+    if (liveUrl) linkLines.push(`Live: [${liveUrl}](${liveUrl})`);
 
     const header = [
       `# ${title}`,
       `*${pitch}*`,
       `Stack: ${stack.join(", ")}`,
-      `Repo: [${repo}](${repo})`,
+      ...linkLines,
       "",
     ].join("\n");
 
