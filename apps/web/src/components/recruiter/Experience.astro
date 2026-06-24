@@ -42,7 +42,7 @@ const rendered = await Promise.all(
 
   <ol class="relative border-l border-tn-border ml-3 space-y-8" aria-label={lang === "es" ? "Historial de experiencia" : "Experience history"}>
     {rendered.map(({ entry, Content }) => {
-      const { company, role, start, end, location, client, stack } = entry.data;
+      const { company, role, start, end, location, client, stack, testimonial } = entry.data;
       const startFmt = formatDate(start, lang);
       const endFmt = formatDate(end, lang);
       const dateRange = `${startFmt} → ${endFmt}`;
@@ -77,6 +77,18 @@ const rendered = await Promise.all(
           <div class="prose-exp text-xs text-tn-text-mute leading-relaxed mb-2">
             <Content />
           </div>
+
+          {testimonial && (
+            <blockquote class="border-l-2 border-tn-blue pl-3 my-2">
+              <p class="text-[11px] italic text-tn-text-mute leading-relaxed">
+                "{testimonial.quote}"
+              </p>
+              <footer class="text-[10px] mt-1">
+                <span class="text-tn-magenta">— {testimonial.attribution}</span>
+                <span class="text-tn-text-dim">, {testimonial.role}</span>
+              </footer>
+            </blockquote>
+          )}
 
           {/* Stack pills */}
           <ul class="flex flex-wrap gap-1.5" aria-label="Stack">

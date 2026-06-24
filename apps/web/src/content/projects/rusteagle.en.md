@@ -1,18 +1,18 @@
 ---
 title: RustEagle
-pitch: "Contributing to an intelligence platform for Rust: live team detection, combat telemetry and multi-tenant clan management."
+pitch: "Co-founded an intelligence platform for Rust: team detection, combat telemetry and clan management. In real use in the community."
 liveUrl: https://rusteagle.vercel.app
-stack: ["Next.js", "TypeScript", "next-intl", "BattleMetrics API", "Auth", "App Router"]
+stack: ["Next.js", "TypeScript", "next-intl", "Steam API", "BattleMetrics API", "Auth", "App Router"]
 lang: en
 order: 3
 ---
 
 In Rust, stepping onto a server blind is the fastest way to lose everything you've farmed since the last wipe. RustEagle fixes that: intel before the raid, not the post-mortem debrief.
 
-I work on the platform as a contributor: frontend and feature work on Next.js App Router, integrating the BattleMetrics API to pull and cross-reference server history. The most interesting technical challenge is the team detector — it builds force-directed graphs from server co-presence overlap to infer squad composition without anyone self-reporting.
+Built **50/50 with a friend**. My side: the full backend — integration with the **Steam API** to pull player profiles and stats, scraping **BattleMetrics** to extract server history and connections, and the logic that cross-references both sources to feed the team detector. Frontend, multi-tenancy and i18n are shared work.
 
-Proper multi-tenancy: independent organisations with differentiated roles (member / admin / superadmin) and real auth. Not "every user has their own row" — full context isolation per org.
+The most interesting technical challenge: the team detector builds force-directed graphs from server co-presence overlap to infer squad composition without anyone self-reporting.
 
-i18n ES/EN via `next-intl` — same bilingual pattern I apply in this CV.
+In real production use by the Rust community. v1.0 deployed.
 
 [Live demo →](https://rusteagle.vercel.app)

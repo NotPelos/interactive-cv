@@ -13,4 +13,4 @@ Terminal interactivo Tokyo Night + microservicio Java sirviendo el PDF on-demand
 
 La metodología es la parte que no se suele ver: **9 subagentes Claude Code** — architect, frontend-dev, backend-dev, content-writer, devops, qa-tester, security-auditor, code-reviewer, astro-tutor — orquestados desde una sesión principal. Cada ciclo: orquestador asigna → obrero ejecuta → code-reviewer + security-auditor validan (bloqueantes) → merge. ~10 horas distribuidas de cero a producción con free tiers.
 
-Vibe coding como metodología real: la IA amplifica el criterio, no lo reemplaza. Los subagentes siguen en `.claude/agents/` si quieres auditarlo.
+Los subagentes siguen en `.claude/agents/` si quieres auditar el proceso.

@@ -9,4 +9,4 @@ Started Computer Engineering at Jaén, jumped off in time, and finished with a v
 
 I enjoy deep debugging, refactoring legacy code without breaking it, and architectures you can explain over one coffee. Strong English (a 3-month exchange in the Netherlands and the Shell Eco Marathon in Rotterdam helped). Remote-first.
 
-I practice **vibe coding** as an actual methodology, not as a buzzword: I iterate with AI (Claude Code) on architecture, code and review — not as a replacement for judgement, but as an amplifier. This CV is the most direct evidence I can give you: the repo is open, commits document the process step by step, and the subagents that orchestrated the work still live under `.claude/agents/` if you want to audit them.
+AI-assisted workflow (vibe coding) for architecture, code and review — not to replace judgement, but to iterate on it faster. This CV is the example: the repo is open, commits document the process, and the subagents that orchestrated the work live in `.claude/agents/` if you want to audit them.

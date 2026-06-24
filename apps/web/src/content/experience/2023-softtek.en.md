@@ -7,6 +7,10 @@ location: Seville
 stack: ["Java 8/11/17", "Spring Boot", "hexagonal architecture", "Kafka", "Jenkins", "Snowflake", "DB2", "Docker", "Grafana"]
 lang: en
 order: 3
+testimonial:
+  quote: "Stands out for his strong willingness to take on new challenges, always eager to learn and contribute. Ismael will be a valuable addition to any company in the sector, and a great teammate who brings good energy to the team."
+  attribution: Verónica Arteaga Pérez
+  role: HR Representative, Softtek Digital Solutions
 ---
 
 The role where the most things happened. Modernisation, automation, support and reporting for Inditex.

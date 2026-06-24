@@ -13,4 +13,4 @@ Tokyo Night interactive terminal + Java microservice serving the PDF on-demand +
 
 The part you don't usually get to see: **9 Claude Code subagents** — architect, frontend-dev, backend-dev, content-writer, devops, qa-tester, security-auditor, code-reviewer, astro-tutor — orchestrated from a single main session. Each cycle: orchestrator assigns → worker executes → code-reviewer + security-auditor sign off (blocking) → merge. About 10 distributed hours from zero to production on free tiers.
 
-Vibe coding as an actual methodology: AI amplifies judgement, doesn't replace it. The subagents still live under `.claude/agents/` if you want to audit the process.
+The subagents still live under `.claude/agents/` if you want to audit the process.

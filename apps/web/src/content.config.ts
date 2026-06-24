@@ -23,6 +23,13 @@ const experience = defineCollection({
     stack: z.array(z.string()),
     lang: langEnum,
     order: z.number(),
+    testimonial: z
+      .object({
+        quote: z.string(),
+        attribution: z.string(),
+        role: z.string(),
+      })
+      .optional(),
   }),
 });
 
