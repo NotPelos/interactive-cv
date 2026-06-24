@@ -1,0 +1,57 @@
+name: Worker — CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/worker/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/worker.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/worker/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/worker.yml"
+
+concurrency:
+  group: worker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint · Typecheck · Build dry-run · Audit
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Habilitar corepack (pnpm)
+        run: corepack enable
+
+      - name: Setup Node 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Instalar dependencias (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (tsc --noEmit)
+        run: pnpm --filter worker typecheck
+
+      - name: Lint (ESLint --max-warnings 0)
+        run: pnpm --filter worker lint
+
+      - name: Build dry-run (wrangler deploy --dry-run)
+        run: pnpm --filter worker build
+
+      - name: Audit de dependencias (nivel high)
+        run: pnpm audit --audit-level=high

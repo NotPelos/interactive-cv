@@ -46,7 +46,7 @@ Cuando trabajes en `apps/worker/`:
 - Whitelist estricta de endpoints GitHub proxiables.
 - KV cache 1h.
 - Rate limit por IP.
-- CORS solo a `https://xpelos.pages.dev`.
+- CORS solo a `https://notpelos.pages.dev`.
 
 ## Flujo
 1. Lee tarea + docs.

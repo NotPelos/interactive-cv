@@ -1,0 +1,57 @@
+name: API — CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api.yml"
+
+concurrency:
+  group: api-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Tests · Build · (OWASP dep-check)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21 (Temurin) con cache Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      # El runner de GitHub es Linux; el mvnw del repo puede no tener bit de ejecución
+      - name: Dar permisos de ejecución a mvnw
+        run: chmod +x apps/api/mvnw
+
+      - name: Tests y build (mvn verify)
+        working-directory: apps/api
+        run: ./mvnw -B verify
+
+      # TODO: activar Dependency-Check cuando esté configurado el plugin en pom.xml
+      # El plugin org.owasp:dependency-check-maven debe añadirse al pom.xml
+      # con <failBuildOnCVSS>7</failBuildOnCVSS> antes de quitar continue-on-error.
+      - name: OWASP Dependency-Check (opcional, no bloquea aún)
+        working-directory: apps/api
+        continue-on-error: true
+        run: |
+          ./mvnw -B org.owasp:dependency-check-maven:check \
+            -Dformat=HTML \
+            -DfailBuildOnCVSS=11 \
+            -DsuppressionFile=dependency-check-suppressions.xml \
+            --no-transfer-progress || true

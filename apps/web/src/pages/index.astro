@@ -1,0 +1,45 @@
+---
+// Smoke test — hello world placeholder.
+// El terminal completo (filesystem virtual, comandos, i18n) llega en Fase 2.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>notpelos@cv</title>
+    <meta name="description" content="Interactive CV — NotPelos" />
+    <!-- JetBrains Mono via Google Fonts. CSP permite fonts.googleapis.com en Fase 2 headers. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-tn-bg text-tn-text font-mono min-h-screen flex items-center justify-center">
+    <div class="text-base leading-relaxed">
+      <p>
+        <span class="text-tn-blue">notpelos@cv</span><span class="text-tn-text-dim">:~$</span>
+        <span class="ml-2">echo &quot;hello, world&quot;</span>
+      </p>
+      <p class="text-tn-green">hello, world</p>
+      <p>
+        <span class="text-tn-blue">notpelos@cv</span><span class="text-tn-text-dim">:~$</span>
+        <span class="ml-2 cursor-blink">_</span>
+      </p>
+    </div>
+
+    <style>
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0; }
+      }
+      /* 530 ms — cadencia clásica xterm según DESIGN.md */
+      .cursor-blink {
+        animation: blink 530ms step-end infinite;
+      }
+    </style>
+  </body>
+</html>

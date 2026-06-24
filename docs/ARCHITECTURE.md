@@ -9,7 +9,7 @@
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Cloudflare Pages — xpelos.pages.dev                        │
+│  Cloudflare Pages — notpelos.pages.dev                      │
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  Astro app (SSG + islands)                            │  │
 │  │  - Terminal component (TS, vanilla, no framework UI)  │  │

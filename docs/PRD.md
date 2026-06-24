@@ -65,4 +65,4 @@ Una página web que **es** el CV en sí misma: un terminal Tokyo Night que demue
 - [ ] Lighthouse ≥ 95 en las 4 categorías.
 - [ ] `security-auditor` da OK.
 - [ ] `code-reviewer` aprueba último PR.
-- [ ] Desplegado en `xpelos.pages.dev` con backend vivo en Fly.io.
+- [ ] Desplegado en `notpelos.pages.dev` con backend vivo en Fly.io.

@@ -23,11 +23,14 @@
     script-src 'self';
     style-src 'self' 'unsafe-inline';
     img-src 'self' https://avatars.githubusercontent.com data:;
-    connect-src 'self' https://*.fly.dev;
+    font-src 'self';
+    connect-src 'self' https://*.fly.dev https://*.workers.dev;
     frame-ancestors 'none';
     base-uri 'self';
     form-action 'self';
   ```
+- **Decisión sobre fuentes (2026-06-24):** JetBrains Mono se **selfhostea** vía `@fontsource/jetbrains-mono` o subset propio en `public/fonts/`. NO se carga desde Google Fonts. Esto mantiene `font-src 'self'` puro y evita relajar la CSP. Pendiente de aplicar en `apps/web/` antes del primer deploy a Cloudflare Pages (Fase 2).
+- **`connect-src` incluye `*.workers.dev`** para el proxy de GitHub (Cloudflare Worker). Cuando se conozca el subdominio exacto del Worker, restringir al host concreto en lugar del wildcard.
 - `X-Content-Type-Options: nosniff`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy: geolocation=(), microphone=(), camera=()`
@@ -35,9 +38,9 @@
 - **No `eval`, no `Function()`, no `dangerouslySetInnerHTML`**. Linter lo bloquea.
 
 ### Worker (Cloudflare)
-- Whitelist de endpoints de GitHub permitidos (`/users/xpelos`, `/users/xpelos/repos`).
+- Whitelist de endpoints de GitHub permitidos (`/users/NotPelos`, `/users/NotPelos/repos`).
 - Rate limit por IP: 30 req/min con `cf.cacheKey`.
-- CORS: solo `https://xpelos.pages.dev`.
+- CORS: solo `https://notpelos.pages.dev`.
 - Si se usa PAT: en secret de Cloudflare, **nunca** en código.
 - Logs sin datos personales.
 

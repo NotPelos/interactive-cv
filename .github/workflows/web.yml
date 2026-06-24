@@ -1,0 +1,58 @@
+name: Web — CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/web.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/web.yml"
+
+# Cancela runs anteriores del mismo PR para no quemar minutos
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint · Typecheck · Build · Audit
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Habilitar corepack (pnpm)
+        run: corepack enable
+
+      - name: Setup Node 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Instalar dependencias (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (astro check)
+        run: pnpm --filter web typecheck
+
+      - name: Lint (ESLint --max-warnings 0)
+        run: pnpm --filter web lint
+
+      - name: Build (astro build)
+        run: pnpm --filter web build
+
+      - name: Audit de dependencias (nivel high)
+        run: pnpm audit --audit-level=high

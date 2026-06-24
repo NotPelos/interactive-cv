@@ -1,0 +1,75 @@
+name: Security — CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Lunes a las 09:00 UTC
+    - cron: "0 9 * * 1"
+
+# No cancel-in-progress aquí: los scans de seguridad deben completarse siempre.
+# `matrix.*` no está disponible en `concurrency` a nivel job/workflow, así que
+# agrupamos por workflow+ref y aceptamos que ambos lenguajes del matrix se
+# serialicen contra el mismo lock — es seguro porque cancel-in-progress=false.
+concurrency:
+  group: security-codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  security-events: write
+  # Necesario para que CodeQL publique alertas en la pestaña Security del repo
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL — ${{ matrix.language }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Setup para Java (solo cuando el matrix lo requiere) ──────────────
+      - name: Setup JDK 21 (Temurin) — solo para java-kotlin
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Dar permisos a mvnw — solo para java-kotlin
+        if: matrix.language == 'java-kotlin'
+        run: chmod +x apps/api/mvnw
+
+      # ── Inicializar CodeQL ───────────────────────────────────────────────
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Consultas de seguridad extendidas (incluye CWE críticos)
+          queries: security-extended
+
+      # ── Build manual para Java ───────────────────────────────────────────
+      - name: Compilar proyecto Java para CodeQL
+        if: matrix.language == 'java-kotlin'
+        working-directory: apps/api
+        run: ./mvnw -B compile -DskipTests
+
+      # ── Análisis ─────────────────────────────────────────────────────────
+      - name: Ejecutar análisis CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

@@ -9,7 +9,7 @@ CV interactivo de **Ismael Sánchez Aguilera Repullo** (alias público **NotPelo
 - **Frontend**: Astro + TypeScript + Tailwind → Cloudflare Pages
 - **Backend**: Spring Boot (Java) microservicio showcase → Fly.io (free tier)
 - **Repos en vivo**: GitHub API cacheada en Cloudflare Worker
-- **Dominio**: `xpelos.pages.dev` (gratis, sin dominio propio por ahora)
+- **Dominio**: `notpelos.pages.dev` (gratis, sin dominio propio por ahora)
 - **PDF del CV**: generado on-demand por el microservicio Java
 - **i18n**: ES/EN vía comando `lang es|en` + autodetección inicial
 

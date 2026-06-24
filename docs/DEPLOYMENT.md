@@ -2,7 +2,7 @@
 
 ## Topología
 
-- **Front (Astro)** → Cloudflare Pages → `xpelos.pages.dev`
+- **Front (Astro)** → Cloudflare Pages → `notpelos.pages.dev`
 - **Worker (GitHub proxy)** → Cloudflare Workers → `xpelos-api.<account>.workers.dev` (ruta `/api/github/*` desde el front)
 - **Backend (Spring Boot)** → Fly.io → `xpelos-cv-api.fly.dev`
 
@@ -103,6 +103,49 @@ Alternativas reevaluadas en orden:
 2. **Koyeb** free (1 servicio nano).
 3. **Hugging Face Spaces** con Docker (raro pero gratis).
 4. Cambiar el PDF a generarlo en el Worker con una lib JS (perdemos showcase Java).
+
+## Branch protection (setup post-creación del repo)
+
+Una vez el repo esté creado en GitHub y la primera CI haya pasado, activar desde
+`Settings → Branches → Add rule` (o via `gh api`) con estos requisitos:
+
+- **Branch name pattern**: `main`
+- **Require a pull request before merging**: sí, con al menos **1 reviewer**.
+- **Require status checks to pass before merging**: sí.
+  - Required checks: `web / Lint · Typecheck · Build · Audit`
+  - Required checks: `worker / Lint · Typecheck · Build dry-run · Audit`
+  - Required checks: `api / Tests · Build · (OWASP dep-check)`
+- **Require branches to be up to date before merging**: sí.
+- **Do not allow bypassing the above settings**: sí (incluye admins).
+- **Allow force pushes**: no.
+- **Allow deletions**: no.
+- **Require linear history**: sí (evita merge commits, obliga a rebase).
+
+Comando de referencia (ajustar `OWNER/REPO`):
+```bash
+gh api repos/OWNER/REPO/branches/main/protection \
+  --method PUT \
+  --input - <<'EOF'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "web / Lint · Typecheck · Build · Audit",
+      "worker / Lint · Typecheck · Build dry-run · Audit",
+      "api / Tests · Build · (OWASP dep-check)"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+EOF
+```
 
 ## Setup inicial (cuando toque)
 

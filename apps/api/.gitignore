@@ -1,0 +1,16 @@
+# Maven build output
+target/
+
+# Maven wrapper jar (downloaded on first run)
+.mvn/wrapper/maven-wrapper.jar
+
+# Application secrets override (never commit)
+src/main/resources/application-secrets.yml
+src/main/resources/application-prod.yml
+
+# IDE
+.idea/
+*.iml
+.settings/
+.project
+.classpath
