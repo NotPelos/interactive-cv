@@ -85,7 +85,7 @@ const cat: Command = {
       };
     }
 
-    const content = node.content();
+    const content = node.content;
 
     // Render Markdown for .md files; plain text for everything else
     if (node.name.endsWith(".md")) {

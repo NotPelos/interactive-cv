@@ -21,7 +21,7 @@ describe("assertFsParity", () => {
     notpelosNodeEs["only-in-es.md"] = {
       type: "file",
       name: "only-in-es.md",
-      content: () => "solo en español",
+      content: "solo en español",
     };
 
     expect(() => assertFsParity(fsEs, fsEn)).toThrow(
@@ -41,7 +41,7 @@ describe("assertFsParity", () => {
     notpelosNodeEn["only-in-en.md"] = {
       type: "file",
       name: "only-in-en.md",
-      content: () => "only in english",
+      content: "only in english",
     };
 
     expect(() => assertFsParity(fsEs, fsEn)).toThrow(

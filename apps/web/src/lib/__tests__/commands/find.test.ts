@@ -9,14 +9,14 @@ const ctx = makeCtx({ cwd: HOME });
 function buildDeepFs(depth: number): Record<string, FsNode> {
   function makeLevel(d: number): FsNode {
     if (d === 0) {
-      return { type: "file", name: "leaf.md", content: () => "leaf" };
+      return { type: "file", name: "leaf.md", content: "leaf" };
     }
     const name = `dir${d}`;
     return {
       type: "directory",
       name,
       children: {
-        "leaf.md": { type: "file", name: "leaf.md", content: () => "leaf" },
+        "leaf.md": { type: "file", name: "leaf.md", content: "leaf" },
         nested: makeLevel(d - 1),
       },
     };

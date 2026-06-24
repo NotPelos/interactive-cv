@@ -1,5 +1,5 @@
 export type FsNode =
-  | { type: "file"; name: string; content: () => string }
+  | { type: "file"; name: string; content: string }
   | { type: "directory"; name: string; children: Record<string, FsNode> };
 
 const HOME_SEGMENTS = ["home", "notpelos"];

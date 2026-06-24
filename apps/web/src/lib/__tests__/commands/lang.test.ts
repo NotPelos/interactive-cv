@@ -100,8 +100,8 @@ describe("FS swap (minimal seed by lang)", () => {
   it("ES seed about.md contains Spanish content", () => {
     const ctx = makeCtx({ lang: "es" });
     const aboutNode = (ctx.fs["home"] as { type: "directory"; children: Record<string, unknown> })
-      ?.children?.["notpelos"] as { type: "directory"; children: Record<string, { content: () => string }> } | undefined;
-    const content = (aboutNode?.children?.["about.md"]?.content?.() ?? "").toLowerCase();
+      ?.children?.["notpelos"] as { type: "directory"; children: Record<string, { content: string }> } | undefined;
+    const content = (aboutNode?.children?.["about.md"]?.content ?? "").toLowerCase();
     expect(content).toContain("backend");
     expect(content).toContain("años");
   });
@@ -109,8 +109,8 @@ describe("FS swap (minimal seed by lang)", () => {
   it("EN seed about.md contains English content", () => {
     const ctx = makeCtx({ lang: "en" });
     const aboutNode = (ctx.fs["home"] as { type: "directory"; children: Record<string, unknown> })
-      ?.children?.["notpelos"] as { type: "directory"; children: Record<string, { content: () => string }> } | undefined;
-    const content = (aboutNode?.children?.["about.md"]?.content?.() ?? "").toLowerCase();
+      ?.children?.["notpelos"] as { type: "directory"; children: Record<string, { content: string }> } | undefined;
+    const content = (aboutNode?.children?.["about.md"]?.content ?? "").toLowerCase();
     expect(content).toContain("backend");
     expect(content).toContain("years");
   });

@@ -86,7 +86,7 @@ type Action =
   | { type: "SET_LANG"; lang: Lang }
   | { type: "SET_SOUND"; enabled: boolean }
   | { type: "FETCH_DONE" }
-  | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: () => string }
+  | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: string }
   | { type: "START_MATRIX" }
   | { type: "STOP_MATRIX" };
 
@@ -155,7 +155,7 @@ function injectFsNode(
   root: Record<string, FsNode>,
   pathSegments: string[],
   name: string,
-  content: () => string
+  content: string
 ): Record<string, FsNode> {
   function cloneDir(
     children: Record<string, FsNode>,
@@ -845,7 +845,7 @@ export default function Terminal({
           type: "INJECT_FS_NODE",
           path: ["var", "log", "github"],
           name: "repos.json",
-          content: () => jsonContent,
+          content: jsonContent,
         });
       } catch {
         dispatch({

@@ -70,7 +70,7 @@ function grepNode(
   }
 
   if (node.type === "file") {
-    grepFile(node.content(), pattern, prefix, matches);
+    grepFile(node.content, pattern, prefix, matches);
   } else {
     for (const child of Object.values(node.children)) {
       if (matches.length >= MAX_RESULTS || state.truncated) return;
@@ -152,7 +152,7 @@ const grep: Command = {
     const walkState: GrepWalkState = { visited: 0, truncated: false };
 
     if (node.type === "file") {
-      grepFile(node.content(), pattern, target, matches);
+      grepFile(node.content, pattern, target, matches);
     } else {
       grepNode(node, pattern, target, matches, 0, walkState);
     }
