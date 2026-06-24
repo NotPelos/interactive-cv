@@ -12,51 +12,80 @@ const locationText = lang === "es"
 const titleText = lang === "es"
   ? "Desarrollador Backend · Java · Spring Boot · Microservicios"
   : "Backend Developer · Java · Spring Boot · Microservices";
+
+const avatarAlt = "Foto de Ismael Sánchez Aguilera Repullo";
 ---
 
 <header class="sticky top-0 z-20 bg-tn-bg/90 backdrop-blur border-b border-tn-border py-4">
   <div class="max-w-[720px] mx-auto px-4 sm:px-6">
-    <h1 class="text-xl font-medium text-tn-text leading-tight">
-      Ismael Sánchez Aguilera Repullo
-    </h1>
-    <p class="text-tn-cyan text-sm mt-0.5">{titleText}</p>
+    <!-- En móvil: columna centrada (foto → nombre). En desktop: fila (foto | nombre+contacto). -->
+    <div class="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
 
-    <!-- Contact row -->
-    <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-tn-text-dim" aria-label={lang === "es" ? "Contacto" : "Contact"}>
-      <li>
-        <a
-          href="mailto:ismaelprr10@gmail.com"
-          class="hover:text-tn-blue transition-colors"
-        >
-          ismaelprr10@gmail.com
-        </a>
-      </li>
-      <li aria-hidden="true" class="text-tn-border select-none">·</li>
-      <li>{locationText}</li>
-      <li aria-hidden="true" class="text-tn-border select-none">·</li>
-      <li>
-        <a
-          href="https://github.com/NotPelos"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hover:text-tn-blue transition-colors"
-          aria-label="GitHub profile"
-        >
-          github.com/NotPelos
-        </a>
-      </li>
-      <li aria-hidden="true" class="text-tn-border select-none">·</li>
-      <li>
-        <a
-          href="https://www.linkedin.com/in/ismael-sanchez-aguilera-repullo/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hover:text-tn-blue transition-colors"
-          aria-label="LinkedIn profile"
-        >
-          LinkedIn
-        </a>
-      </li>
-    </ul>
+      <!-- Avatar circular -->
+      <div class="shrink-0">
+        <picture>
+          <source
+            type="image/webp"
+            srcset="/avatar/avatar-80.webp 1x, /avatar/avatar-160.webp 2x, /avatar/avatar-240.webp 3x"
+          />
+          <img
+            src="/avatar/avatar-80.jpg"
+            srcset="/avatar/avatar-160.jpg 2x, /avatar/avatar-240.jpg 3x"
+            alt={avatarAlt}
+            width="80"
+            height="80"
+            loading="eager"
+            decoding="async"
+            class="rounded-full border border-tn-border w-16 h-16 md:w-20 md:h-20 object-cover print:border-gray-300"
+          />
+        </picture>
+      </div>
+
+      <!-- Nombre, título y contacto -->
+      <div class="flex-1 min-w-0 text-center sm:text-left">
+        <h1 class="text-xl font-medium text-tn-text leading-tight">
+          Ismael Sánchez Aguilera Repullo
+        </h1>
+        <p class="text-tn-cyan text-sm mt-0.5">{titleText}</p>
+
+        <!-- Contact row -->
+        <ul class="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 mt-2 text-xs text-tn-text-dim" aria-label={lang === "es" ? "Contacto" : "Contact"}>
+          <li>
+            <a
+              href="mailto:ismaelprr10@gmail.com"
+              class="hover:text-tn-blue transition-colors"
+            >
+              ismaelprr10@gmail.com
+            </a>
+          </li>
+          <li aria-hidden="true" class="text-tn-border select-none">·</li>
+          <li>{locationText}</li>
+          <li aria-hidden="true" class="text-tn-border select-none">·</li>
+          <li>
+            <a
+              href="https://github.com/NotPelos"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-tn-blue transition-colors"
+              aria-label="GitHub profile"
+            >
+              github.com/NotPelos
+            </a>
+          </li>
+          <li aria-hidden="true" class="text-tn-border select-none">·</li>
+          <li>
+            <a
+              href="https://www.linkedin.com/in/ismael-sanchez-aguilera-repullo/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-tn-blue transition-colors"
+              aria-label="LinkedIn profile"
+            >
+              LinkedIn
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </header>
