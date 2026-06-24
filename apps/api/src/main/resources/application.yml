@@ -5,6 +5,12 @@ spring:
   application:
     name: interactive-cv-api
 
+# App-specific config. ALLOWED_ORIGIN env var override (set via flyctl secrets)
+# para poder cambiar el dominio sin redeploy. Default apunta al sitio actual.
+app:
+  cors:
+    allowed-origin: ${ALLOWED_ORIGIN:https://notpelos.pages.dev}
+
 # Actuator — expose only health and info, never env/beans/mappings
 management:
   endpoints:

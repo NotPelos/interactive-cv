@@ -55,3 +55,21 @@ jobs:
             -DfailBuildOnCVSS=11 \
             -DsuppressionFile=dependency-check-suppressions.xml \
             --no-transfer-progress || true
+
+  deploy:
+    name: Deploy a Fly.io
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy a Fly.io (notpelos-cv-api)
+        working-directory: apps/api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only --wait-timeout 300
