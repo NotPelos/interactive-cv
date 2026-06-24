@@ -1,4 +1,5 @@
 import type { Command } from "./types.js";
+import { detectBot } from "../userAgent.js";
 
 const whoami: Command = {
   name: "whoami",
@@ -17,15 +18,24 @@ const whoami: Command = {
     ],
   },
   run(_args, ctx) {
-    // TODO Fase 3: bot detection per DESIGN.md
+    // userAgent is only defined client-side — access guard required for SSR safety.
+    if (ctx.userAgent !== undefined) {
+      const bot = detectBot(ctx.userAgent);
+      if (bot !== null) {
+        const name = bot.toLowerCase();
+        const text =
+          ctx.lang === "en"
+            ? `${name} — index away, but whoever hires me will be human.`
+            : `${name} — indexa lo que quieras, pero el que me contrate es humano.`;
+        return {
+          lines: [{ kind: "plain", segments: [{ text, color: "tn-magenta" }] }],
+        };
+      }
+    }
+
     const text = ctx.lang === "en" ? "visitor" : "visitante";
     return {
-      lines: [
-        {
-          kind: "plain",
-          segments: [{ text, color: "tn-magenta" }],
-        },
-      ],
+      lines: [{ kind: "plain", segments: [{ text, color: "tn-magenta" }] }],
     };
   },
 };

@@ -62,6 +62,7 @@ export interface Ctx {
   lang: Lang;                   // active UI language
   t: (key: string, args?: Record<string, string>) => string; // i18n helper
   endpoints: Endpoints;         // external service URLs (empty = degraded mode)
+  userAgent?: string;           // navigator.userAgent — injected client-side only; undefined in SSR/tests
 }
 
 export type CommandResult =
@@ -70,12 +71,15 @@ export type CommandResult =
   | { lines: Line[]; effect: "setLang"; lang: Lang }
   | { lines: Line[]; effect: "navigate"; url: string }
   | { lines: Line[]; effect: "downloadPdf"; url: string; fallbackUrl: string; filename: string }
-  | { lines: Line[]; effect: "fetchRepos"; url: string };
+  | { lines: Line[]; effect: "fetchRepos"; url: string }
+  | { lines: Line[]; effect: "setSound"; soundEnabled: boolean };
 
 export interface Command {
   name: string;
   brief: { es: string; en: string };
   manual?: { es: string[]; en: string[] };
+  /** When true, the command is excluded from `help` output but still executable and visible in `man`. */
+  hidden?: boolean;
   run(args: string[], ctx: Ctx): CommandResult;
 }
 

@@ -8,6 +8,8 @@ import type { FsNode } from "../lib/fs/index.js";
 import { formatPath, resolvePath, getNode, HOME_SEGMENTS } from "../lib/fs/index.js";
 import { makeT } from "../lib/i18n/t.js";
 import { detectLang, LANG_STORAGE_KEY } from "../lib/i18n/detect.js";
+import { readSoundStorage } from "../lib/commands/sound.js";
+import MatrixRain from "./MatrixRain.js";
 
 // ---------------------------------------------------------------------------
 // Validated repo shape from Worker response
@@ -59,7 +61,6 @@ interface TerminalState {
   lang: Lang;
   fs: Record<string, FsNode>;
   // Pending navigation URL set by the reducer; consumed by a useEffect.
-  // Keeps the reducer pure (no setTimeout inside).
   pendingNavigation: string | null;
   // Pending fetch — blocks input while a fetch is in progress.
   pendingFetch: "pdf" | "repos" | null;
@@ -68,19 +69,26 @@ interface TerminalState {
     | { kind: "pdf"; url: string; fallbackUrl: string; filename: string }
     | { kind: "repos"; url: string }
     | null;
+  // Sound toggle
+  soundEnabled: boolean;
+  // Matrix rain overlay
+  matrixActive: boolean;
 }
 
 type Action =
   | { type: "SET_INPUT"; value: string }
-  | { type: "EXECUTE"; input: string; fsByLang: Record<Lang, Record<string, FsNode>>; skillsData?: SkillsData; endpoints: Endpoints }
+  | { type: "EXECUTE"; input: string; fsByLang: Record<Lang, Record<string, FsNode>>; skillsData?: SkillsData; endpoints: Endpoints; userAgent?: string }
   | { type: "HISTORY_UP" }
   | { type: "HISTORY_DOWN" }
   | { type: "CLEAR" }
   | { type: "CTRL_C" }
   | { type: "APPEND_LINES"; lines: Line[] }
   | { type: "SET_LANG"; lang: Lang }
+  | { type: "SET_SOUND"; enabled: boolean }
   | { type: "FETCH_DONE" }
-  | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: () => string };
+  | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: () => string }
+  | { type: "START_MATRIX" }
+  | { type: "STOP_MATRIX" };
 
 const INITIAL_CWD = [...HOME_SEGMENTS];
 
@@ -107,9 +115,10 @@ const WELCOME_LINES: Line[] = [
 interface InitialProps {
   defaultLang: Lang;
   initialFs: Record<string, FsNode>;
+  initialSoundEnabled: boolean;
 }
 
-function makeInitialState({ defaultLang, initialFs }: InitialProps): TerminalState {
+function makeInitialState({ defaultLang, initialFs, initialSoundEnabled }: InitialProps): TerminalState {
   return {
     output: WELCOME_LINES,
     cwd: INITIAL_CWD,
@@ -122,6 +131,8 @@ function makeInitialState({ defaultLang, initialFs }: InitialProps): TerminalSta
     pendingNavigation: null,
     pendingFetch: null,
     pendingFetchPayload: null,
+    soundEnabled: initialSoundEnabled,
+    matrixActive: false,
   };
 }
 
@@ -146,13 +157,11 @@ function injectFsNode(
   name: string,
   content: () => string
 ): Record<string, FsNode> {
-  // Clone the root one level at a time along the path.
   function cloneDir(
     children: Record<string, FsNode>,
     remaining: string[]
   ): Record<string, FsNode> {
     if (remaining.length === 0) {
-      // Inject file here
       return {
         ...children,
         [name]: { type: "file", name, content } as FsNode,
@@ -168,7 +177,6 @@ function injectFsNode(
         [seg]: { ...existing, children: cloneDir(existing.children, rest) },
       };
     }
-    // Directory doesn't exist — create it on-the-fly
     return {
       ...children,
       [seg]: {
@@ -192,6 +200,15 @@ function reducer(
 
     case "SET_LANG":
       return { ...state, lang: action.lang };
+
+    case "SET_SOUND":
+      return { ...state, soundEnabled: action.enabled };
+
+    case "START_MATRIX":
+      return { ...state, matrixActive: true };
+
+    case "STOP_MATRIX":
+      return { ...state, matrixActive: false };
 
     case "FETCH_DONE":
       return { ...state, pendingFetch: null, pendingFetchPayload: null };
@@ -256,7 +273,6 @@ function reducer(
     case "EXECUTE": {
       const raw = action.input.trim();
       const promptLine = buildPromptLine(state.cwd, raw);
-      // Use the mutable fs from state (may have injected nodes from fetchRepos)
       const activeFs = state.fs;
 
       if (raw === "") {
@@ -327,6 +343,7 @@ function reducer(
         lang: state.lang,
         t: tFn,
         endpoints: action.endpoints,
+        userAgent: action.userAgent,
       };
 
       const result = command.run(args, ctx);
@@ -361,6 +378,18 @@ function reducer(
           ...state,
           output: [...state.output, promptLine, ...result.lines],
           lang: result.lang,
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
+        };
+      }
+
+      if (result.effect === "setSound") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          soundEnabled: result.soundEnabled,
           history: newHistory,
           input: "",
           historyIndex: -1,
@@ -498,12 +527,56 @@ function triggerDownload(blob: Blob, filename: string): void {
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  // Cleanup after browser has queued the download
   setTimeout(() => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, 200);
 }
+
+// ---------------------------------------------------------------------------
+// Web Audio API — keystroke click (lazy initialised on first gesture)
+// ---------------------------------------------------------------------------
+
+// Safari < 14.1 only exposes webkitAudioContext. Returns null when unavailable.
+function createAudioContext(): AudioContext | null {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    return Ctx ? new Ctx() : null;
+  } catch {
+    return null;
+  }
+}
+
+function playTypeClick(audioCtx: AudioContext): void {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.type = "square";
+  o.frequency.value = 800 + Math.random() * 200;
+  g.gain.value = 0.02;
+  o.start();
+  o.stop(audioCtx.currentTime + 0.015);
+}
+
+// ---------------------------------------------------------------------------
+// Konami sequence
+// ---------------------------------------------------------------------------
+
+const KONAMI: string[] = [
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "b",
+  "a",
+];
 
 // ---------------------------------------------------------------------------
 // Main Terminal component
@@ -513,11 +586,9 @@ interface TerminalProps {
   initialFsByLang?: Record<Lang, Record<string, FsNode>>;
   skillsData?: SkillsData;
   defaultLang?: Lang;
-  // External service endpoints. Empty strings = degraded mode (use fallbacks).
   endpoints?: Endpoints;
 }
 
-// Module-scoped fallback — avoids recreating the object on every render
 const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
   es: seedFs,
   en: seedFs,
@@ -533,13 +604,11 @@ export default function Terminal({
 }: TerminalProps = {}) {
   const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
 
-  // Use the lang-specific FS as initial state so that fs in state stays mutable
-  // (INJECT_FS_NODE will clone and update it without touching fsByLang).
   const [state, dispatch] = useReducer(
     reducer,
     // defaultLang is typed as Lang ("es"|"en"), not user-controlled input
     // eslint-disable-next-line security/detect-object-injection
-    { defaultLang, initialFs: fsByLang[defaultLang] },
+    { defaultLang, initialFs: fsByLang[defaultLang], initialSoundEnabled: false },
     makeInitialState
   );
 
@@ -547,10 +616,24 @@ export default function Terminal({
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isFirstScrollRef = useRef<boolean>(true);
-
   const isInitialMount = useRef(true);
 
-  // Combina detección inicial y persistencia.
+  // Lazy AudioContext ref — only created after first user gesture.
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Close AudioContext on unmount to release Web Audio resources.
+  useEffect(() => () => { audioCtxRef.current?.close(); }, []);
+
+  // Konami buffer — last 10 keys
+  const konamiBufferRef = useRef<string[]>([]);
+
+  // Read sound preference from localStorage on mount.
+  useEffect(() => {
+    const stored = readSoundStorage();
+    dispatch({ type: "SET_SOUND", enabled: stored === "on" });
+  }, []);
+
+  // Lang detection + persistence
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -561,7 +644,7 @@ export default function Terminal({
     }
     localStorage.setItem(LANG_STORAGE_KEY, state.lang);
     document.documentElement.lang = state.lang;
-  }, [state.lang]); // defaultLang is stable — no need in deps
+  }, [state.lang]); // defaultLang is stable
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -572,6 +655,49 @@ export default function Terminal({
     isFirstScrollRef.current = false;
     bottomRef.current?.scrollIntoView({ behavior });
   }, [state.output]);
+
+  // Konami code detector — window-level keydown listener.
+  // Only the exact keys that form the Konami sequence are accumulated.
+  // This avoids incidental capture of unrelated keypresses.
+  useEffect(() => {
+    const KONAMI_KEYS = new Set([
+      "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+      "b", "B", "a", "A",
+    ]);
+
+    function handleWindowKeyDown(e: KeyboardEvent): void {
+      // Do not re-trigger matrix while one is already active.
+      if (state.matrixActive) return;
+      // Ignore any key not part of the Konami sequence — defence in depth.
+      if (!KONAMI_KEYS.has(e.key)) return;
+
+      const buf = konamiBufferRef.current;
+      buf.push(e.key);
+      if (buf.length > KONAMI.length) buf.shift();
+
+      if (
+        buf.length === KONAMI.length &&
+        // i is a clamped numeric index, not user-controlled input
+        // eslint-disable-next-line security/detect-object-injection
+        buf.every((k, i) => k === KONAMI[i])
+      ) {
+        konamiBufferRef.current = [];
+        dispatch({ type: "START_MATRIX" });
+      }
+    }
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+    return () => window.removeEventListener("keydown", handleWindowKeyDown);
+  }, [state.matrixActive]);
+
+  // Stop Matrix after 10 seconds
+  useEffect(() => {
+    if (!state.matrixActive) return;
+    const timer = setTimeout(() => {
+      dispatch({ type: "STOP_MATRIX" });
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [state.matrixActive]);
 
   // Consumes pendingNavigation — keeps the reducer pure.
   useEffect(() => {
@@ -586,7 +712,7 @@ export default function Terminal({
     return () => clearTimeout(timer);
   }, [state.pendingNavigation]);
 
-  // Handles downloadPdf effect — fetch from API, fall back to static PDF.
+  // Handles downloadPdf effect
   useEffect(() => {
     const payload = state.pendingFetchPayload;
     if (!payload || payload.kind !== "pdf") return;
@@ -594,14 +720,9 @@ export default function Terminal({
     const { url, fallbackUrl, filename } = payload;
 
     const controller = new AbortController();
-    // Wire AbortController to a 5s timeout. The controller's signal is passed to
-    // fetch() so cleanup() actually cancels the in-flight request on unmount.
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     async function run(): Promise<void> {
-      // Degraded mode: URL missing or not parseable — go straight to fallback.
-      // URL.canParse is the standards-compliant way to validate a URL; the old
-      // !url.startsWith("http") heuristic was fragile (e.g. https vs http).
       if (!url || !URL.canParse(url)) {
         dispatch({
           type: "APPEND_LINES",
@@ -660,9 +781,9 @@ export default function Terminal({
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [state.pendingFetchPayload]); // state.lang captured via closure at effect run time — intentional
+  }, [state.pendingFetchPayload]); // state.lang captured via closure — intentional
 
-  // Handles fetchRepos effect — fetch from Worker, format and inject into FS.
+  // Handles fetchRepos effect
   useEffect(() => {
     const payload = state.pendingFetchPayload;
     if (!payload || payload.kind !== "repos") return;
@@ -671,14 +792,9 @@ export default function Terminal({
     const lang = state.lang;
 
     const controller = new AbortController();
-    // Wire AbortController to a 5s timeout so cleanup() cancels the in-flight
-    // request on unmount and does not dispatch to a dead component.
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     async function run(): Promise<void> {
-      // Degraded mode: URL missing or not parseable — report and bail out.
-      // URL.canParse is the standards-compliant validator; replaces the fragile
-      // !url.startsWith("http") heuristic.
       if (!url || !URL.canParse(url)) {
         dispatch({
           type: "APPEND_LINES",
@@ -724,7 +840,6 @@ export default function Terminal({
 
         dispatch({ type: "APPEND_LINES", lines: repoLines });
 
-        // Inject fetched data into /var/log/github/repos.json
         const jsonContent = JSON.stringify(repos, null, 2);
         dispatch({
           type: "INJECT_FS_NODE",
@@ -775,6 +890,20 @@ export default function Terminal({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // Web Audio click — lazy AudioContext creation on first gesture.
+      if (state.soundEnabled) {
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = createAudioContext();
+        }
+        const ctx = audioCtxRef.current;
+        // Only play for printable characters and backspace — skip modifiers.
+        const isPrintable =
+          e.key.length === 1 || e.key === "Backspace" || e.key === "Delete";
+        if (ctx && isPrintable && !e.ctrlKey && !e.metaKey) {
+          playTypeClick(ctx);
+        }
+      }
+
       if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
         dispatch({ type: "CLEAR" });
@@ -826,11 +955,18 @@ export default function Terminal({
 
       if (e.key === "Enter") {
         if (isBlocked) return;
-        dispatch({ type: "EXECUTE", input: state.input, fsByLang, skillsData, endpoints });
+        dispatch({
+          type: "EXECUTE",
+          input: state.input,
+          fsByLang,
+          skillsData,
+          endpoints,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        });
         return;
       }
     },
-    [state.input, state.cwd, activeFs, fsByLang, skillsData, isBlocked, endpoints]
+    [state.input, state.cwd, activeFs, fsByLang, skillsData, isBlocked, endpoints, state.soundEnabled]
   );
 
   const handleInputChange = useCallback((e: Event) => {
@@ -846,6 +982,9 @@ export default function Terminal({
       class="relative w-full min-h-screen bg-tn-bg font-mono text-[15px] leading-relaxed cursor-text select-text p-4 md:p-6"
       onClick={handleContainerClick}
     >
+      {/* Matrix rain overlay */}
+      {state.matrixActive && <MatrixRain />}
+
       {/* Output history */}
       <div class="pb-2">
         {state.output.map((line, i) => (

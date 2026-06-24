@@ -28,7 +28,7 @@ const help: Command = {
       { kind: "plain", segments: [{ text: "" }] },
     ];
 
-    const entries = Array.from(registry.entries());
+    const entries = Array.from(registry.entries()).filter(([, cmd]) => !cmd.hidden);
     // Render two columns — i is a numeric index, not user-controlled
     for (let i = 0; i < entries.length; i += 2) {
       // eslint-disable-next-line security/detect-object-injection
