@@ -4,7 +4,7 @@ pitch: Daily Dragon Ball Wordle. Guess the day's character by attributes.
 liveUrl: https://dle.xpelos23.workers.dev
 stack: ["Cloudflare Workers", "JavaScript", "KV"]
 lang: en
-order: 3
+order: 4
 ---
 
 6 guesses, 1 character per day. Hints by attribute: race, origin, affiliation, saga. Miss it before Cell shows up and tomorrow is another chance.

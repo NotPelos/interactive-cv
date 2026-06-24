@@ -4,7 +4,7 @@ pitch: Wordle diario de Dragon Ball. Adivina el personaje del día por sus atrib
 liveUrl: https://dle.xpelos23.workers.dev
 stack: ["Cloudflare Workers", "JavaScript", "KV"]
 lang: es
-order: 3
+order: 4
 ---
 
 6 intentos, 1 personaje al día. Pistas por atributos: raza, origen, afiliación, saga. Si no lo aciertas antes de que llegue Cell, el día siguiente tienes otra oportunidad.

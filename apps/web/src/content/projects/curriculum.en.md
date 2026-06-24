@@ -4,7 +4,7 @@ pitch: The CV you're reading, built with AI subagent orchestration. The code is 
 repo: https://github.com/NotPelos/curriculum
 stack: ["Astro", "Preact", "TypeScript", "Tailwind", "Spring Boot", "Cloudflare Pages", "Cloudflare Workers", "Fly.io", "GitHub Actions"]
 lang: en
-order: 7
+order: 8
 ---
 
 Tokyo Night interactive terminal + Java microservice serving the PDF on-demand + Cloudflare Worker caching the GitHub API. All on free tiers. Repo is public because **the code is the CV**.

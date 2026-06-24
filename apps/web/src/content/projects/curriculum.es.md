@@ -4,7 +4,7 @@ pitch: El CV que estás leyendo, construido con orquestación de subagentes IA. 
 repo: https://github.com/NotPelos/curriculum
 stack: ["Astro", "Preact", "TypeScript", "Tailwind", "Spring Boot", "Cloudflare Pages", "Cloudflare Workers", "Fly.io", "GitHub Actions"]
 lang: es
-order: 7
+order: 8
 ---
 
 Terminal interactivo Tokyo Night + microservicio Java sirviendo el PDF on-demand + Cloudflare Worker cacheando la GitHub API. Todo en free tier. El repo está abierto porque **el código es el CV**.
