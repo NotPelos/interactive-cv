@@ -57,15 +57,11 @@ export interface Ctx {
   t: (key: string, args?: Record<string, string>) => string; // i18n helper
 }
 
-export type CommandEffect = "clear" | "setLang";
-
-export type CommandResult = {
-  lines: Line[];
-  effect?: CommandEffect;
-  newCwd?: string[];
-  newPrevCwd?: string[];
-  lang?: Lang; // only when effect === 'setLang'
-};
+export type CommandResult =
+  | { lines: Line[]; effect?: undefined; newCwd?: string[]; newPrevCwd?: string[] }
+  | { lines: Line[]; effect: "clear"; newCwd?: string[]; newPrevCwd?: string[] }
+  | { lines: Line[]; effect: "setLang"; lang: Lang }
+  | { lines: Line[]; effect: "navigate"; url: string };
 
 export interface Command {
   name: string;

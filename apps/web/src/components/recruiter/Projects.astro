@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const allProjects = await getCollection("projects");
+
+// Top 3 by order (1 = most sellable): AuthServiceGame, Discord-Bot, robo_contenedores
+const projects = allProjects
+  .filter((p) => p.data.lang === lang && p.data.order <= 3)
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<section aria-labelledby="projects-heading">
+  <h2
+    id="projects-heading"
+    class="text-xs uppercase tracking-[0.15em] text-tn-blue font-medium mb-3 pb-1 border-b border-tn-border"
+  >
+    {lang === "es" ? "Proyectos" : "Projects"}
+  </h2>
+
+  <ul class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    {projects.map((p) => (
+      <li class="border border-tn-border rounded-md p-4 flex flex-col gap-2">
+        <div>
+          <h3 class="text-sm font-medium text-tn-text">{p.data.title}</h3>
+          <p class="text-xs text-tn-cyan mt-0.5 leading-snug">{p.data.pitch}</p>
+        </div>
+
+        {/* Stack pills */}
+        <ul class="flex flex-wrap gap-1" aria-label="Stack">
+          {p.data.stack.map((tech) => (
+            <li class="text-[10px] uppercase tracking-wider border border-tn-border rounded px-2 py-0.5 text-tn-text-dim">
+              {tech}
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={p.data.repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-xs text-tn-magenta hover:text-tn-blue transition-colors mt-auto"
+          aria-label={`${lang === "es" ? "Repositorio de" : "Repository for"} ${p.data.title}`}
+        >
+          {lang === "es" ? "ver repo →" : "view repo →"}
+        </a>
+      </li>
+    ))}
+  </ul>
+</section>

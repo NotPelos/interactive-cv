@@ -1,0 +1,103 @@
+---
+import skillsRaw from "../../content/skills/skills.json";
+import { skillsSchema } from "../../content.config.ts";
+
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const skills = skillsSchema.parse(skillsRaw);
+
+// Build a bar of 5 chars: filled blocks + empty blocks
+function bar(level: number): string {
+  const filled = "█".repeat(level);
+  const empty = "░".repeat(5 - level);
+  return filled + empty;
+}
+
+// Capitalise first char only
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const languagesSection = lang === "es" ? "Lenguajes" : "Languages";
+const frameworksSection = lang === "es" ? "Frameworks" : "Frameworks";
+const infraSection = lang === "es" ? "Infraestructura" : "Infrastructure";
+const databasesSection = lang === "es" ? "Bases de datos" : "Databases";
+const softSection = lang === "es" ? "Habilidades blandas" : "Soft skills";
+---
+
+<section aria-labelledby="skills-heading">
+  <h2
+    id="skills-heading"
+    class="text-xs uppercase tracking-[0.15em] text-tn-blue font-medium mb-3 pb-1 border-b border-tn-border"
+  >
+    {lang === "es" ? "Skills" : "Skills"}
+  </h2>
+
+  <div class="space-y-5">
+
+    <!-- Languages with level bars -->
+    <div>
+      <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">{languagesSection}</h3>
+      <ul class="space-y-1">
+        {Object.entries(skills.languages).map(([name, data]) => (
+          <li class="flex items-baseline gap-3 text-xs">
+            <span class="text-tn-text-mute w-16 shrink-0">{cap(name)}</span>
+            <span class="text-tn-yellow font-mono tracking-widest" aria-label={`${data.level} de 5`}>
+              {bar(data.level)}
+            </span>
+            <span class="text-tn-text-dim text-[10px]">{data.level}/5</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Frameworks as pills -->
+    <div>
+      <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">{frameworksSection}</h3>
+      <ul class="flex flex-wrap gap-1.5">
+        {Object.entries(skills.frameworks).map(([name]) => (
+          <li class="text-[10px] uppercase tracking-wider border border-tn-border rounded px-2 py-0.5 text-tn-text-dim">
+            {name}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Infra as pills -->
+    <div>
+      <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">{infraSection}</h3>
+      <ul class="flex flex-wrap gap-1.5">
+        {Object.entries(skills.infra).map(([name]) => (
+          <li class="text-[10px] uppercase tracking-wider border border-tn-border rounded px-2 py-0.5 text-tn-text-dim">
+            {name}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Databases as pills -->
+    <div>
+      <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">{databasesSection}</h3>
+      <ul class="flex flex-wrap gap-1.5">
+        {Object.entries(skills.databases).map(([name]) => (
+          <li class="text-[10px] uppercase tracking-wider border border-tn-border rounded px-2 py-0.5 text-tn-text-dim">
+            {name}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Soft skills as paragraph -->
+    <div>
+      <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">{softSection}</h3>
+      <p class="text-xs text-tn-text-mute leading-relaxed">
+        {skills.soft.join(" · ")}
+      </p>
+    </div>
+
+  </div>
+</section>

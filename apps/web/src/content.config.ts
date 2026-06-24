@@ -65,4 +65,17 @@ const skillsSchema = z.object({
 
 export { skillsSchema };
 
-export const collections = { about, experience, projects, education };
+// Highlights collection — 4 vendable achievements shown on recruiter view.
+// Using 4 separate files (highlight-N.{lang}.md) rather than one file per lang
+// because it makes each metric independently updatable and order-sortable.
+const highlights = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/highlights" }),
+  schema: z.object({
+    metric: z.string(),
+    label: z.string(),
+    lang: langEnum,
+    order: z.number().int().min(1).max(4),
+  }),
+});
+
+export const collections = { about, experience, projects, education, highlights };

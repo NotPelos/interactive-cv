@@ -1,0 +1,23 @@
+---
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const altLang = lang === "es" ? "en" : "es";
+const altHref = lang === "es" ? "/cv/en" : "/cv";
+const altLabel = lang === "es" ? "EN" : "ES";
+const ariaLabel = lang === "es"
+  ? "Cambiar a la versión en inglés"
+  : "Switch to Spanish version";
+---
+
+<a
+  href={altHref}
+  class="no-print fixed top-4 right-4 z-30 text-xs text-tn-text-dim hover:text-tn-blue border border-tn-border rounded px-2 py-1 bg-tn-bg/90 backdrop-blur transition-colors"
+  aria-label={ariaLabel}
+  lang={altLang}
+>
+  {altLabel}
+</a>

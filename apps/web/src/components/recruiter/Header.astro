@@ -1,0 +1,62 @@
+---
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const locationText = lang === "es"
+  ? "Mairena del Aljarafe, Sevilla · Remoto"
+  : "Mairena del Aljarafe, Seville · Remote";
+
+const titleText = lang === "es"
+  ? "Desarrollador Backend · Java · Spring Boot · Microservicios"
+  : "Backend Developer · Java · Spring Boot · Microservices";
+---
+
+<header class="sticky top-0 z-20 bg-tn-bg/90 backdrop-blur border-b border-tn-border py-4">
+  <div class="max-w-[720px] mx-auto px-4 sm:px-6">
+    <h1 class="text-xl font-medium text-tn-text leading-tight">
+      Ismael Sánchez Aguilera Repullo
+    </h1>
+    <p class="text-tn-cyan text-sm mt-0.5">{titleText}</p>
+
+    <!-- Contact row -->
+    <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-tn-text-dim" aria-label={lang === "es" ? "Contacto" : "Contact"}>
+      <li>
+        <a
+          href="mailto:ismaelprr10@gmail.com"
+          class="hover:text-tn-blue transition-colors"
+        >
+          ismaelprr10@gmail.com
+        </a>
+      </li>
+      <li aria-hidden="true" class="text-tn-border select-none">·</li>
+      <li>{locationText}</li>
+      <li aria-hidden="true" class="text-tn-border select-none">·</li>
+      <li>
+        <a
+          href="https://github.com/NotPelos"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-tn-blue transition-colors"
+          aria-label="GitHub profile"
+        >
+          github.com/NotPelos
+        </a>
+      </li>
+      <li aria-hidden="true" class="text-tn-border select-none">·</li>
+      <li>
+        <a
+          href="https://www.linkedin.com/in/ismael-sanchez-aguilera-repullo/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-tn-blue transition-colors"
+          aria-label="LinkedIn profile"
+        >
+          LinkedIn
+        </a>
+      </li>
+    </ul>
+  </div>
+</header>

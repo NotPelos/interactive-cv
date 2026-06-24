@@ -2,6 +2,15 @@ import { describe, it, expect } from "vitest";
 import langCmd from "../../commands/lang.js";
 import cat from "../../commands/cat.js";
 import { makeCtx } from "../helpers/ctx.js";
+import type { CommandResult } from "../../commands/types.js";
+
+// Narrowing helper: accede a result.lang solo cuando effect === 'setLang'.
+function asSetLangResult(r: CommandResult) {
+  if (r.effect !== "setLang") {
+    throw new Error(`Expected setLang effect, got: ${r.effect}`);
+  }
+  return r;
+}
 
 // Nota: los tests de detectLang/isValidLang viven en __tests__/detect.test.ts
 
@@ -24,7 +33,7 @@ describe("lang command", () => {
   // 2. lang es — sets lang to es
   it("lang es returns setLang effect with lang=es", () => {
     const ctx = makeCtx({ lang: "en" });
-    const result = langCmd.run(["es"], ctx);
+    const result = asSetLangResult(langCmd.run(["es"], ctx));
     expect(result.effect).toBe("setLang");
     expect(result.lang).toBe("es");
     expect(result.lines[0]?.kind).not.toBe("error");
@@ -34,7 +43,7 @@ describe("lang command", () => {
   // 3. lang en — sets lang to en
   it("lang en returns setLang effect with lang=en", () => {
     const ctx = makeCtx({ lang: "es" });
-    const result = langCmd.run(["en"], ctx);
+    const result = asSetLangResult(langCmd.run(["en"], ctx));
     expect(result.effect).toBe("setLang");
     expect(result.lang).toBe("en");
     expect(result.lines[0]?.kind).not.toBe("error");

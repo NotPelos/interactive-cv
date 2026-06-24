@@ -21,6 +21,9 @@ interface TerminalState {
   historyIndex: number;
   input: string;
   lang: Lang;
+  // Pending navigation URL set by the reducer; consumed by a useEffect.
+  // Keeps the reducer pure (no setTimeout inside).
+  pendingNavigation: string | null;
   // fs is not stored in state — it's derived from fsByLang + lang at runtime
 }
 
@@ -69,6 +72,7 @@ function makeInitialState({ defaultLang }: InitialProps): TerminalState {
     historyIndex: -1,
     input: "",
     lang: defaultLang,
+    pendingNavigation: null,
   };
 }
 
@@ -92,7 +96,7 @@ function reducer(
 ): TerminalState {
   switch (action.type) {
     case "SET_INPUT":
-      return { ...state, input: action.value, historyIndex: -1 };
+      return { ...state, input: action.value, historyIndex: -1, pendingNavigation: null };
 
     case "SET_LANG":
       return { ...state, lang: action.lang };
@@ -232,18 +236,33 @@ function reducer(
           history: newHistory,
           input: "",
           historyIndex: -1,
+          pendingNavigation: null,
         };
       }
 
-      if (result.effect === "setLang" && result.lang) {
-        const newLang = result.lang;
+      if (result.effect === "navigate") {
+        // Store the URL as pending so a useEffect can launch the navigation.
+        // Keeps the reducer pure — no setTimeout / side-effects here.
+        const { url } = result;
         return {
           ...state,
           output: [...state.output, promptLine, ...result.lines],
-          lang: newLang,
           history: newHistory,
           input: "",
           historyIndex: -1,
+          pendingNavigation: url,
+        };
+      }
+
+      if (result.effect === "setLang") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          lang: result.lang,
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
         };
       }
 
@@ -255,6 +274,7 @@ function reducer(
         history: newHistory,
         input: "",
         historyIndex: -1,
+        pendingNavigation: null,
       };
     }
 
@@ -391,6 +411,22 @@ export default function Terminal({
     bottomRef.current?.scrollIntoView({ behavior });
   }, [state.output]);
 
+  // Consumes pendingNavigation — keeps the reducer pure.
+  // Guard rejects anything that isn't a same-origin relative path (Fix 6).
+  useEffect(() => {
+    const url = state.pendingNavigation;
+    if (!url) return;
+    if (!url.startsWith("/")) return;
+
+    const timer = setTimeout(() => {
+      window.location.href = url;
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [state.pendingNavigation]);
+
+  const isNavigating = state.pendingNavigation !== null;
+
   const handleContainerClick = useCallback(() => {
     inputRef.current?.focus();
   }, []);
@@ -449,11 +485,12 @@ export default function Terminal({
       }
 
       if (e.key === "Enter") {
+        if (isNavigating) return;
         dispatch({ type: "EXECUTE", input: state.input, fsByLang, skillsData });
         return;
       }
     },
-    [state.input, state.cwd, activeFs, fsByLang, skillsData]
+    [state.input, state.cwd, activeFs, fsByLang, skillsData, isNavigating]
   );
 
   const handleInputChange = useCallback((e: Event) => {
@@ -492,13 +529,14 @@ export default function Terminal({
         <span class="text-tn-text animate-blink">{"█"}</span>
       </div>
 
-      {/* Hidden input — real keyboard target, invisible */}
+      {/* Hidden input — real keyboard target, invisible. Disabled during navigation. */}
       <input
         ref={inputRef}
         type="text"
         value={state.input}
         onInput={handleInputChange}
         onKeyDown={handleKeyDown}
+        disabled={isNavigating}
         class="absolute opacity-0 pointer-events-none w-px h-px"
         aria-label="Terminal input"
         autocomplete="off"

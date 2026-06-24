@@ -1,0 +1,112 @@
+---
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const rows = [
+  {
+    year: "2015",
+    center: "I.E.S Jándula · Andújar",
+    title: lang === "es" ? "Bachillerato" : "High School Diploma",
+  },
+  {
+    year: "2015 → 2016",
+    center: lang === "es" ? "Universidad de Jaén" : "University of Jaén",
+    title: lang === "es"
+      ? "Ingeniería Informática (cambio de rumbo)"
+      : "Computer Engineering (changed direction)",
+  },
+  {
+    year: "2016 → 2019",
+    center: "IES Francisco de los Ríos · Fernán Núñez",
+    title: lang === "es"
+      ? "Técnico Superior en DAM"
+      : "Higher Technician in Cross-Platform App Development (DAM)",
+  },
+  {
+    year: "2020 → 2021",
+    center: lang === "es"
+      ? "IES Ángel de Saavedra · Córdoba"
+      : "IES Ángel de Saavedra · Córdoba",
+    title: lang === "es"
+      ? "CFGS Diseño de Videojuegos"
+      : "Higher Technician in Video Game Design",
+  },
+];
+
+const bootcamps = [
+  "Everis / NTT Data — Java + Microservicios",
+  "Everis / NTT Data — .NET",
+  "Indra — Java + Microservicios",
+];
+
+const others =
+  lang === "es"
+    ? [
+        "Shell Eco Marathon Rotterdam — técnico en concurso de coches ecológicos",
+        "Intercambio académico 3 meses en Holanda",
+        "12 años en academia de inglés",
+        "Título por construir coche teledirigido con sensores Arduino",
+      ]
+    : [
+        "Shell Eco Marathon Rotterdam — technician in eco-car competition",
+        "3-month academic exchange in the Netherlands",
+        "12 years at English language academy",
+        "Award for building a remote-controlled car with Arduino sensors",
+      ];
+---
+
+<section aria-labelledby="education-heading">
+  <h2
+    id="education-heading"
+    class="text-xs uppercase tracking-[0.15em] text-tn-blue font-medium mb-3 pb-1 border-b border-tn-border"
+  >
+    {lang === "es" ? "Educación" : "Education"}
+  </h2>
+
+  <!-- Formal education table -->
+  <table class="w-full text-xs text-left border-collapse" aria-label={lang === "es" ? "Formación académica" : "Academic background"}>
+    <thead>
+      <tr class="text-tn-text-dim uppercase tracking-wider text-[10px]">
+        <th scope="col" class="pb-2 font-medium pr-4 whitespace-nowrap">
+          {lang === "es" ? "Año" : "Year"}
+        </th>
+        <th scope="col" class="pb-2 font-medium pr-4">
+          {lang === "es" ? "Centro" : "School"}
+        </th>
+        <th scope="col" class="pb-2 font-medium">
+          {lang === "es" ? "Titulación" : "Qualification"}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr class="border-t border-tn-border">
+          <td class="py-2 pr-4 text-tn-text-dim whitespace-nowrap align-top">{r.year}</td>
+          <td class="py-2 pr-4 text-tn-text-mute align-top">{r.center}</td>
+          <td class="py-2 text-tn-text align-top">{r.title}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <!-- Bootcamps -->
+  <div class="mt-4">
+    <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">Bootcamps</h3>
+    <ul class="space-y-0.5 text-xs text-tn-text-mute list-disc list-inside">
+      {bootcamps.map((b) => <li>{b}</li>)}
+    </ul>
+  </div>
+
+  <!-- Other -->
+  <div class="mt-4">
+    <h3 class="text-xs text-tn-text-dim uppercase tracking-wider mb-2">
+      {lang === "es" ? "Otros" : "Other"}
+    </h3>
+    <ul class="space-y-0.5 text-xs text-tn-text-mute list-disc list-inside">
+      {others.map((o) => <li>{o}</li>)}
+    </ul>
+  </div>
+</section>

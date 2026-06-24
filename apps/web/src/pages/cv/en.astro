@@ -1,0 +1,61 @@
+---
+import RecruiterLayout from "../../layouts/RecruiterLayout.astro";
+import Header from "../../components/recruiter/Header.astro";
+import Summary from "../../components/recruiter/Summary.astro";
+import Highlights from "../../components/recruiter/Highlights.astro";
+import Experience from "../../components/recruiter/Experience.astro";
+import Projects from "../../components/recruiter/Projects.astro";
+import Skills from "../../components/recruiter/Skills.astro";
+import Education from "../../components/recruiter/Education.astro";
+import BackToTerminal from "../../components/recruiter/BackToTerminal.astro";
+import LangSwitch from "../../components/recruiter/LangSwitch.astro";
+
+const lang = "en" as const;
+---
+
+<RecruiterLayout
+  lang={lang}
+  canonical="/cv/en"
+>
+  <BackToTerminal lang={lang} />
+  <LangSwitch lang={lang} />
+
+  <Header lang={lang} />
+
+  <main id="main" class="max-w-[720px] mx-auto px-4 sm:px-6 py-10 space-y-12">
+    <Summary lang={lang} />
+    <Highlights lang={lang} />
+    <Experience lang={lang} />
+    <Projects lang={lang} />
+    <Skills lang={lang} />
+    <Education lang={lang} />
+  </main>
+
+  <footer class="max-w-[720px] mx-auto px-4 sm:px-6 pb-10 text-xs text-tn-text-dim text-center">
+    <p>
+      <a href="/" class="hover:text-tn-blue transition-colors no-print">notpelos.pages.dev</a>
+      <span class="print-only">notpelos.pages.dev</span>
+      &nbsp;·&nbsp;
+      <a
+        href="https://github.com/NotPelos"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-tn-blue transition-colors"
+      >
+        github.com/NotPelos
+      </a>
+    </p>
+  </footer>
+</RecruiterLayout>
+
+<style is:global>
+  .print-only {
+    display: none;
+  }
+
+  @media print {
+    .print-only {
+      display: inline;
+    }
+  }
+</style>

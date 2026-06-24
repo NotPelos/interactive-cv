@@ -1,0 +1,135 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  lang: "es" | "en";
+  title?: string;
+  description?: string;
+  canonical: string;
+}
+
+const {
+  lang,
+  title = lang === "es"
+    ? "Ismael Sánchez Aguilera Repullo — Backend Developer · Java · Spring Boot · CV"
+    : "Ismael Sánchez Aguilera Repullo — Backend Developer · Java · Spring Boot · Resume",
+  description = lang === "es"
+    ? "4,5 años de backend Java. Spring Boot, microservicios, Kafka. Disponible para proyectos interesantes."
+    : "4.5 years of Java backend. Spring Boot, microservices, Kafka. Available for interesting projects.",
+  canonical,
+} = Astro.props;
+
+const altLang = lang === "es" ? "en" : "es";
+const altUrl = lang === "es" ? "/cv/en" : "/cv";
+const currentUrl = lang === "es" ? "/cv" : "/cv/en";
+
+const baseUrl = "https://notpelos.pages.dev";
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary meta -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={`${baseUrl}${canonical}`} />
+
+    <!-- hreflang alternates -->
+    <link rel="alternate" hreflang={lang} href={`${baseUrl}${currentUrl}`} />
+    <link rel="alternate" hreflang={altLang} href={`${baseUrl}${altUrl}`} />
+    <link rel="alternate" hreflang="x-default" href={`${baseUrl}/cv`} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={`${baseUrl}${canonical}`} />
+    <!-- TODO: generar OG image en Fase 8 -->
+    <meta property="og:image" content={`${baseUrl}/og-image.png`} />
+    <meta property="profile:first_name" content="Ismael" />
+    <meta property="profile:last_name" content="Sánchez Aguilera Repullo" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${baseUrl}/og-image.png`} />
+
+    <!-- JSON-LD Person (structured data, no user input).
+         Escape < to < to prevent </script> injection even in static content. -->
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Ismael Sánchez Aguilera Repullo",
+      "alternateName": "NotPelos",
+      "jobTitle": lang === "es"
+        ? "Desarrollador Backend · Java · Spring Boot · Microservicios"
+        : "Backend Developer · Java · Spring Boot · Microservices",
+      "email": "ismaelprr10@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Mairena del Aljarafe",
+        "addressRegion": "Sevilla",
+        "addressCountry": "ES"
+      },
+      "sameAs": [
+        "https://github.com/NotPelos",
+        "https://www.linkedin.com/in/ismael-sanchez-aguilera-repullo/"
+      ],
+      "url": `${baseUrl}${canonical}`
+    }).replace(/</g, "\\u003c")} />
+  </head>
+
+  <body class="bg-tn-bg text-tn-text font-mono min-h-screen">
+    <!-- Skip link for accessibility -->
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-tn-elev focus:text-tn-blue focus:px-3 focus:py-1 focus:rounded focus:border focus:border-tn-border"
+    >
+      {lang === "es" ? "Saltar al contenido" : "Skip to content"}
+    </a>
+
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  /* Print styles — 0 JS, all CSS */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    body {
+      background: #fff !important;
+      color: #000 !important;
+      font-size: 11pt !important;
+      /* Sans-serif en impresión: más legible en papel; los headings con tracking retienen la personalidad */
+      font-family: ui-sans-serif, system-ui, sans-serif !important;
+    }
+
+    /* Render external links inline */
+    a[href^="http"]::after {
+      content: " (" attr(href) ")";
+      font-size: 9pt;
+      color: #555;
+    }
+
+    /* Don't expand mailto or anchors */
+    a[href^="mailto"]::after,
+    a[href^="#"]::after {
+      content: none;
+    }
+
+    .experience-entry {
+      page-break-inside: avoid;
+    }
+
+    section {
+      page-break-inside: avoid;
+    }
+  }
+</style>

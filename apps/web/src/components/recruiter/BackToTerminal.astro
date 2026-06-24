@@ -1,0 +1,17 @@
+---
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const label = lang === "es" ? "← volver a terminal" : "← back to terminal";
+---
+
+<a
+  href="/"
+  class="no-print fixed top-4 left-4 z-30 text-xs text-tn-blue hover:text-tn-text border border-tn-border rounded px-2 py-1 bg-tn-bg/90 backdrop-blur transition-colors"
+  aria-label={lang === "es" ? "Volver al terminal interactivo" : "Back to interactive terminal"}
+>
+  {label}
+</a>

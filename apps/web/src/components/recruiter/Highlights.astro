@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const allHighlights = await getCollection("highlights");
+const highlights = allHighlights
+  .filter((h) => h.data.lang === lang)
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<section aria-labelledby="highlights-heading">
+  <h2
+    id="highlights-heading"
+    class="text-xs uppercase tracking-[0.15em] text-tn-blue font-medium mb-3 pb-1 border-b border-tn-border"
+  >
+    {lang === "es" ? "Logros clave" : "Key achievements"}
+  </h2>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {highlights.map((h) => (
+      <div class="border border-tn-border rounded-md p-4">
+        <span class="block text-2xl font-medium text-tn-yellow leading-none mb-1">
+          {h.data.metric}
+        </span>
+        <span class="text-xs text-tn-text-mute leading-snug">
+          {h.data.label}
+        </span>
+      </div>
+    ))}
+  </div>
+</section>

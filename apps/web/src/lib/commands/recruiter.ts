@@ -8,37 +8,30 @@ const recruiter: Command = {
   },
   manual: {
     es: [
-      "Accede a la vista clásica de CV, optimizada para reclutadores no técnicos.",
-      "Vista clásica disponible en Fase 5 — estará en /cv.",
+      "Abre la vista clásica del CV, optimizada para reclutadores no técnicos.",
+      "Navega a /cv (ES) o /cv/en (EN) según el idioma activo.",
     ],
     en: [
-      "Access the classic CV view, optimised for non-technical recruiters.",
-      "Classic view available in Phase 5 — will be at /cv.",
+      "Opens the classic CV view, optimised for non-technical recruiters.",
+      "Navigates to /cv/en (EN) or /cv (ES) based on the active language.",
     ],
   },
   run(_args, ctx) {
+    const url = ctx.lang === "en" ? "/cv/en" : "/cv";
+    const transitionText =
+      ctx.lang === "en"
+        ? "→ opening recruiter view…"
+        : "→ abriendo vista recruiter…";
+
     return {
       lines: [
         {
           kind: "plain",
-          segments: [
-            { text: ctx.t("recruiterStub"), color: "tn-yellow" },
-          ],
-        },
-        {
-          kind: "plain",
-          segments: [
-            {
-              text: ctx.lang === "en"
-                ? "Meanwhile, use the "
-                : "Mientras tanto, usa el botón ",
-              color: "tn-text-dim",
-            },
-            { text: "👔 recruiter", color: "tn-blue" },
-            { text: ctx.t("recruiterHint"), color: "tn-text-dim" },
-          ],
+          segments: [{ text: transitionText, color: "tn-yellow" }],
         },
       ],
+      effect: "navigate",
+      url,
     };
   },
 };

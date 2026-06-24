@@ -1,0 +1,61 @@
+---
+import { getCollection } from "astro:content";
+import { render } from "astro:content";
+
+interface Props {
+  lang: "es" | "en";
+}
+
+const { lang } = Astro.props;
+
+const aboutEntries = await getCollection("about");
+const entry = aboutEntries.find((e) => e.data.lang === lang);
+
+const availabilityNote = lang === "es"
+  ? "No busco activamente. Si el proyecto pinta bien, hablamos."
+  : "Not actively looking. If the project's interesting, let's talk.";
+
+// Render Markdown to HTML at build time — no user-controlled input, safe
+const rendered = entry ? await render(entry) : null;
+const { Content } = rendered ?? { Content: null };
+---
+
+<section aria-labelledby="summary-heading">
+  <h2
+    id="summary-heading"
+    class="text-xs uppercase tracking-[0.15em] text-tn-blue font-medium mb-3 pb-1 border-b border-tn-border"
+  >
+    {lang === "es" ? "Sobre mí" : "About"}
+  </h2>
+
+  {Content && (
+    <div class="prose-recruiter text-tn-text-mute leading-relaxed text-sm space-y-3">
+      <Content />
+    </div>
+  )}
+
+  <p class="mt-3 text-xs text-tn-text-dim italic">
+    {availabilityNote}
+  </p>
+</section>
+
+<style>
+  /* Scoped prose styles for MD content rendered at build time */
+  .prose-recruiter :global(p) {
+    margin-bottom: 0.75rem;
+  }
+
+  .prose-recruiter :global(strong) {
+    color: #c0caf5; /* tn-text */
+    font-weight: 500;
+  }
+
+  .prose-recruiter :global(a) {
+    color: #7aa2f7; /* tn-blue */
+    text-decoration: none;
+  }
+
+  .prose-recruiter :global(a:hover) {
+    text-decoration: underline;
+  }
+</style>
