@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import tree from "../../commands/tree.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME });
 
 describe("tree command", () => {
   it("renders root directory label", () => {

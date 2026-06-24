@@ -1,18 +1,13 @@
 import { describe, it, expect } from "vitest";
 import cd from "../../commands/cd.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: ["home"] as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME, prevCwd: ["home"] });
 
 describe("cd command", () => {
   it("cd with no args goes to home", () => {
-    const startCtx = { ...ctx, cwd: ["home", "notpelos", "experience"] };
+    const startCtx = makeCtx({ cwd: ["home", "notpelos", "experience"] });
     const result = cd.run([], startCtx);
     expect(result.newCwd).toEqual(HOME);
     expect(result.lines).toHaveLength(0);
@@ -31,11 +26,11 @@ describe("cd command", () => {
 
   it("cd - goes to previous directory when OLDPWD is set", () => {
     const result = cd.run(["-"], ctx);
-    expect(result.newCwd).toEqual(ctx.prevCwd);
+    expect(result.newCwd).toEqual(["home"]);
   });
 
-  it("cd - returns error when OLDPWD is null (fix 7)", () => {
-    const noOldpwdCtx = { ...ctx, prevCwd: null };
+  it("cd - returns error when OLDPWD is null", () => {
+    const noOldpwdCtx = makeCtx({ cwd: HOME, prevCwd: null });
     const result = cd.run(["-"], noOldpwdCtx);
     expect(result.lines[0]?.kind).toBe("error");
     expect(result.lines[0]?.segments[0]?.text).toBe("cd: OLDPWD not set");

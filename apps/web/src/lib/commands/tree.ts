@@ -38,12 +38,22 @@ function buildTree(
 
 const tree: Command = {
   name: "tree",
-  brief: "Árbol de directorios en ASCII",
-  manual: [
-    "Renderiza el árbol de archivos del directorio indicado (o el actual).",
-    "Profundidad máxima: 3 niveles. Archivos ocultos excluidos.",
-    "Uso: tree [path]",
-  ],
+  brief: {
+    es: "Árbol de directorios en ASCII",
+    en: "ASCII directory tree",
+  },
+  manual: {
+    es: [
+      "Renderiza el árbol de archivos del directorio indicado (o el actual).",
+      "Profundidad máxima: 3 niveles. Archivos ocultos excluidos.",
+      "Uso: tree [path]",
+    ],
+    en: [
+      "Renders the file tree of the given directory (or the current one).",
+      "Maximum depth: 3 levels. Hidden files excluded.",
+      "Usage: tree [path]",
+    ],
+  },
   run(args, ctx) {
     const targetPath = args[0];
     const segs = targetPath ? resolvePath(targetPath, ctx.cwd) : [...ctx.cwd];
@@ -53,7 +63,12 @@ const tree: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `tree: ${targetPath ?? ""}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "tree", path: targetPath ?? "" }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -66,7 +81,12 @@ const tree: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `tree: ${targetPath ?? ""}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "tree", path: targetPath ?? "" }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -77,7 +97,12 @@ const tree: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `tree: ${targetPath ?? ""}: Not a directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("notADirectory", { cmd: "tree", path: targetPath ?? "" }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };

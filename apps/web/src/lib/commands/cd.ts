@@ -3,12 +3,22 @@ import { resolvePath, getNode, HOME_SEGMENTS } from "../fs/index.js";
 
 const cd: Command = {
   name: "cd",
-  brief: "Cambia el directorio actual",
-  manual: [
-    "Navega a un directorio. Sin args va a home (~).",
-    "Soporta rutas relativas, absolutas, ~ y cd - (vuelve al directorio anterior).",
-    "Uso: cd [path]  — ejemplos: cd experience  cd ..  cd ~  cd -",
-  ],
+  brief: {
+    es: "Cambia el directorio actual",
+    en: "Change current directory",
+  },
+  manual: {
+    es: [
+      "Navega a un directorio. Sin args va a home (~).",
+      "Soporta rutas relativas, absolutas, ~ y cd - (vuelve al directorio anterior).",
+      "Uso: cd [path]  — ejemplos: cd experience  cd ..  cd ~  cd -",
+    ],
+    en: [
+      "Navigate to a directory. With no args, goes to home (~).",
+      "Supports relative paths, absolute paths, ~ and cd - (goes back to previous directory).",
+      "Usage: cd [path]  — examples: cd experience  cd ..  cd ~  cd -",
+    ],
+  },
   run(args, ctx) {
     // cd with no args → go home
     if (args.length === 0 || args[0] === undefined) {
@@ -21,14 +31,14 @@ const cd: Command = {
 
     const target = args[0];
 
-    // cd - → go to previous directory (fix 7: error if OLDPWD not set)
+    // cd - → go to previous directory
     if (target === "-") {
       if (ctx.prevCwd === null) {
         return {
           lines: [
             {
               kind: "error",
-              segments: [{ text: "cd: OLDPWD not set", color: "tn-red" }],
+              segments: [{ text: ctx.t("oldpwdNotSet"), color: "tn-red" }],
             },
           ],
         };
@@ -47,7 +57,12 @@ const cd: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cd: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "cd", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -60,7 +75,12 @@ const cd: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cd: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "cd", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -71,7 +91,12 @@ const cd: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cd: ${target}: Not a directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("notADirectory", { cmd: "cd", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };

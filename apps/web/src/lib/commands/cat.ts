@@ -4,19 +4,29 @@ import { renderMarkdown } from "../markdown/render.js";
 
 const cat: Command = {
   name: "cat",
-  brief: "Muestra el contenido de un archivo",
-  manual: [
-    "Imprime el contenido de un archivo en la terminal.",
-    "Si el archivo es .md, renderiza Markdown con colores Tokyo Night.",
-    "Uso: cat <archivo>  — soporta rutas relativas, absolutas y ~.",
-  ],
+  brief: {
+    es: "Muestra el contenido de un archivo",
+    en: "Show file contents",
+  },
+  manual: {
+    es: [
+      "Imprime el contenido de un archivo en la terminal.",
+      "Si el archivo es .md, renderiza Markdown con colores Tokyo Night.",
+      "Uso: cat <archivo>  — soporta rutas relativas, absolutas y ~.",
+    ],
+    en: [
+      "Prints the contents of a file to the terminal.",
+      "If the file is .md, renders Markdown with Tokyo Night colours.",
+      "Usage: cat <file>  — supports relative, absolute and ~ paths.",
+    ],
+  },
   run(args, ctx) {
     if (args.length === 0 || args[0] === undefined || args[0].trim() === "") {
       return {
         lines: [
           {
             kind: "error",
-            segments: [{ text: "cat: falta operando de archivo", color: "tn-red" }],
+            segments: [{ text: ctx.t("catMissingArg"), color: "tn-red" }],
           },
         ],
       };
@@ -30,7 +40,12 @@ const cat: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cat: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "cat", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -43,7 +58,12 @@ const cat: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cat: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "cat", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -54,7 +74,12 @@ const cat: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `cat: ${target}: Is a directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("isADirectory", { cmd: "cat", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };

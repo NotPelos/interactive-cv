@@ -1,4 +1,5 @@
 import type { FsNode } from "./index.js";
+import type { Lang } from "../commands/types.js";
 
 // ---------------------------------------------------------------------------
 // Types for content collection entries passed from index.astro
@@ -23,6 +24,13 @@ Desarrollador backend con 4,5 años de experiencia en Java / Spring Boot.
 Stack principal: Java, Spring Boot, Kafka, Docker, PostgreSQL.
 `;
 
+const minimalAboutEn = () =>
+  `# About me
+
+Backend developer with 4.5 years of experience in Java / Spring Boot.
+Main stack: Java, Spring Boot, Kafka, Docker, PostgreSQL.
+`;
+
 const minimalSkills = () =>
   `{
   "languages": { "java": { "level": 5 }, "sql": { "level": 4 } },
@@ -40,6 +48,13 @@ const minimalEducation = () =>
 - 2020-2021: CFGS Diseño de Videojuegos
 `;
 
+const minimalEducationEn = () =>
+  `# Education
+
+- 2016-2019: Higher Technician in DAM (Software Development)
+- 2020-2021: Higher Cert. in Video Game Design
+`;
+
 const minimalContact = () =>
   `BEGIN:VCARD
 VERSION:3.0
@@ -50,7 +65,7 @@ END:VCARD`;
 
 const minimalSecretsReadme = () => `[acceso restringido]`;
 
-export function getMinimalSeed(): Record<string, FsNode> {
+function buildMinimalFs(lang: Lang): Record<string, FsNode> {
   return {
     home: {
       type: "directory",
@@ -63,7 +78,7 @@ export function getMinimalSeed(): Record<string, FsNode> {
             "about.md": {
               type: "file",
               name: "about.md",
-              content: minimalAbout,
+              content: lang === "en" ? minimalAboutEn : minimalAbout,
             },
             experience: {
               type: "directory",
@@ -72,12 +87,18 @@ export function getMinimalSeed(): Record<string, FsNode> {
                 "2025-aubay.md": {
                   type: "file",
                   name: "2025-aubay.md",
-                  content: () => "# Aubay\n\nSoftware Developer · Nov 2025 → presente",
+                  content:
+                    lang === "en"
+                      ? () => "# Aubay\n\nSoftware Developer · Nov 2025 → present"
+                      : () => "# Aubay\n\nSoftware Developer · Nov 2025 → presente",
                 },
                 "2023-softtek.md": {
                   type: "file",
                   name: "2023-softtek.md",
-                  content: () => "# Softtek\n\nSoftware Developer · Ene 2023 → Nov 2024",
+                  content:
+                    lang === "en"
+                      ? () => "# Softtek\n\nSoftware Developer · Jan 2023 → Nov 2024"
+                      : () => "# Softtek\n\nSoftware Developer · Ene 2023 → Nov 2024",
                 },
               },
             },
@@ -88,7 +109,10 @@ export function getMinimalSeed(): Record<string, FsNode> {
                 "authservicegame.md": {
                   type: "file",
                   name: "authservicegame.md",
-                  content: () => "# AuthServiceGame\n\nTracker de tiempo de juego.",
+                  content:
+                    lang === "en"
+                      ? () => "# AuthServiceGame\n\nPlaytime tracker built with microservices."
+                      : () => "# AuthServiceGame\n\nTracker de tiempo de juego.",
                 },
               },
             },
@@ -100,7 +124,7 @@ export function getMinimalSeed(): Record<string, FsNode> {
             "education.md": {
               type: "file",
               name: "education.md",
-              content: minimalEducation,
+              content: lang === "en" ? minimalEducationEn : minimalEducation,
             },
             "contact.vcf": {
               type: "file",
@@ -125,6 +149,29 @@ export function getMinimalSeed(): Record<string, FsNode> {
   };
 }
 
+export function getMinimalSeed(lang: Lang = "es"): Record<string, FsNode> {
+  return buildMinimalFs(lang);
+}
+
+// Extrae el slug limpio de un entry.id del glob loader de Astro.
+// Astro 6 glob loader normaliza el stem del filename: "2025-aubay.es.md"
+// puede generar el id "2025-aubayes" (concatena slug+lang, quita puntos y extensión).
+// Estrategia: quitar prefix, extensión .md, sufijo ".es"/".en" con punto,
+// y finalmente los últimos 2 chars si son "es"/"en" (formato Astro 6 normalizado).
+function extractSlug(id: string, prefix: string): string {
+  // Quita prefix de colección si el glob loader lo incluye (e.g. "experience/slug")
+  // Usamos slice manual en lugar de new RegExp(prefix) para evitar lint security/detect-non-literal-regexp
+  const withPrefix = `${prefix}/`;
+  let s = id.startsWith(withPrefix) ? id.slice(withPrefix.length) : id;
+  // Quita extensión .md si el glob loader la incluye en el id
+  if (s.endsWith(".md")) s = s.slice(0, -3);
+  // Quita sufijo ".es"/".en" con punto (formato con extensión explícita en el id)
+  if (s.endsWith(".es") || s.endsWith(".en")) s = s.slice(0, -3);
+  // Astro 6 normaliza "slug.es.md" → "slughtmles" (sin punto, 2 últimos chars son el lang code)
+  else if (s.endsWith("es") || s.endsWith("en")) s = s.slice(0, -2);
+  return s;
+}
+
 // ---------------------------------------------------------------------------
 // Build virtual FS from Astro content collection entries (called at build time
 // in index.astro — never in the browser or in tests).
@@ -142,16 +189,25 @@ NOTE:linkedin.com/in/ismael-sanchez-aguilera-repullo
 END:VCARD`;
 }
 
-export function buildFsFromContent(collections: {
-  about: ContentEntry[];
-  experience: ContentEntry[];
-  projects: ContentEntry[];
-  education: ContentEntry[];
-  skillsJson?: Record<string, unknown>;
-}): Record<string, FsNode> {
+export function buildFsFromContent(
+  collections: {
+    about: ContentEntry[];
+    experience: ContentEntry[];
+    projects: ContentEntry[];
+    education: ContentEntry[];
+    skillsJson?: Record<string, unknown>;
+  },
+  lang: Lang = "es"
+): Record<string, FsNode> {
+  // Filter entries by lang
+  const aboutEntries = collections.about.filter((e) => e.data["lang"] === lang);
+  const expEntries = collections.experience.filter((e) => e.data["lang"] === lang);
+  const projEntries = collections.projects.filter((e) => e.data["lang"] === lang);
+  const eduEntries = collections.education.filter((e) => e.data["lang"] === lang);
+
   // --- about.md ---
-  const aboutEntry = collections.about[0];
-  const aboutContent = aboutEntry?.body ?? minimalAbout();
+  const aboutEntry = aboutEntries[0];
+  const aboutContent = aboutEntry?.body ?? (lang === "en" ? minimalAboutEn() : minimalAbout());
   const aboutFile: FsNode = {
     type: "file",
     name: "about.md",
@@ -160,7 +216,7 @@ export function buildFsFromContent(collections: {
 
   // --- experience/ directory ---
   const expChildren: Record<string, FsNode> = {};
-  const sortedExp = [...collections.experience].sort((a, b) => {
+  const sortedExp = [...expEntries].sort((a, b) => {
     const oA = (a.data["order"] as number) ?? 99;
     const oB = (b.data["order"] as number) ?? 99;
     return oA - oB;
@@ -175,18 +231,17 @@ export function buildFsFromContent(collections: {
     const client = entry.data["client"] as string | undefined;
     const body = entry.body ?? "";
 
+    const clientLabel = lang === "en" ? "client" : "cliente";
     const header = [
       `# ${company}`,
-      `**${role}**${client ? ` · cliente ${client}` : ""}`,
+      `**${role}**${client ? ` · ${clientLabel} ${client}` : ""}`,
       `**${start} → ${end}** · ${location}`,
       `Stack: ${stack.join(", ")}`,
       "",
     ].join("\n");
 
     const fullContent = header + body;
-    // Astro 6 glob loader strips the extension from the id; add .md back
-    const rawId = entry.id.replace(/^experience\//, "");
-    const fileName = rawId.endsWith(".md") ? rawId : rawId + ".md";
+    const fileName = extractSlug(entry.id, "experience") + ".md";
 
     // fileName is derived from a trusted content entry id, not user input
     // eslint-disable-next-line security/detect-object-injection
@@ -199,7 +254,7 @@ export function buildFsFromContent(collections: {
 
   // --- projects/ directory ---
   const projChildren: Record<string, FsNode> = {};
-  const sortedProj = [...collections.projects].sort((a, b) => {
+  const sortedProj = [...projEntries].sort((a, b) => {
     const oA = (a.data["order"] as number) ?? 99;
     const oB = (b.data["order"] as number) ?? 99;
     return oA - oB;
@@ -220,9 +275,7 @@ export function buildFsFromContent(collections: {
     ].join("\n");
 
     const fullContent = header + body;
-    // Astro 6 glob loader strips the extension from the id; add .md back
-    const rawId = entry.id.replace(/^projects\//, "");
-    const fileName = rawId.endsWith(".md") ? rawId : rawId + ".md";
+    const fileName = extractSlug(entry.id, "projects") + ".md";
 
     // fileName is derived from a trusted content entry id, not user input
     // eslint-disable-next-line security/detect-object-injection
@@ -233,7 +286,7 @@ export function buildFsFromContent(collections: {
     };
   }
 
-  // --- skills.json ---
+  // --- skills.json (lang-agnostic) ---
   const skillsContent = collections.skillsJson
     ? JSON.stringify(collections.skillsJson, null, 2)
     : minimalSkills();
@@ -244,10 +297,10 @@ export function buildFsFromContent(collections: {
   };
 
   // --- education.md ---
-  // Convention: MD bodies must NOT start with their own H1; the H1 is generated from the frontmatter title.
-  const eduEntry = collections.education[0];
-  const eduTitle = (eduEntry?.data["title"] as string) ?? "Educación";
-  const eduBody = eduEntry?.body ?? minimalEducation();
+  const eduEntry = eduEntries[0];
+  const defaultTitle = lang === "en" ? "Education" : "Educación";
+  const eduTitle = (eduEntry?.data["title"] as string) ?? defaultTitle;
+  const eduBody = eduEntry?.body ?? (lang === "en" ? minimalEducationEn() : minimalEducation());
   const eduContent = `# ${eduTitle}\n\n${eduBody}`;
   const educationFile: FsNode = {
     type: "file",
@@ -305,4 +358,49 @@ export function buildFsFromContent(collections: {
 // seedFs — used as fallback when Terminal receives no initialFs prop.
 // In production, index.astro passes the real FS. In tests, use getMinimalSeed().
 // ---------------------------------------------------------------------------
-export const seedFs: Record<string, FsNode> = getMinimalSeed();
+export const seedFs: Record<string, FsNode> = getMinimalSeed("es");
+
+// ---------------------------------------------------------------------------
+// assertFsParity — verifica que dos árboles FS tienen los mismos paths.
+// Lanza en build si hay asimetría entre la versión ES y EN del FS.
+// ---------------------------------------------------------------------------
+
+function collectPaths(node: FsNode, prefix: string): Set<string> {
+  const paths = new Set<string>();
+  paths.add(prefix);
+  if (node.type === "directory") {
+    for (const [childName, child] of Object.entries(node.children)) {
+      const childPaths = collectPaths(child, `${prefix}/${childName}`);
+      for (const p of childPaths) paths.add(p);
+    }
+  }
+  return paths;
+}
+
+function collectFsPaths(fs: Record<string, FsNode>): Set<string> {
+  const paths = new Set<string>();
+  for (const [name, node] of Object.entries(fs)) {
+    const nodePaths = collectPaths(node, name);
+    for (const p of nodePaths) paths.add(p);
+  }
+  return paths;
+}
+
+export function assertFsParity(
+  fsEs: Record<string, FsNode>,
+  fsEn: Record<string, FsNode>
+): void {
+  const pathsEs = collectFsPaths(fsEs);
+  const pathsEn = collectFsPaths(fsEn);
+
+  for (const path of pathsEs) {
+    if (!pathsEn.has(path)) {
+      throw new Error(`FS asymmetry between langs at ${path} (present in es, missing in en)`);
+    }
+  }
+  for (const path of pathsEn) {
+    if (!pathsEs.has(path)) {
+      throw new Error(`FS asymmetry between langs at ${path} (present in en, missing in es)`);
+    }
+  }
+}

@@ -5,16 +5,25 @@ export const registry: Map<string, Command> = new Map();
 
 const help: Command = {
   name: "help",
-  brief: "Muestra los comandos disponibles",
-  manual: [
-    "Lista todos los comandos disponibles con una descripción breve.",
-    "Para ayuda detallada de un comando concreto, usa man <comando>.",
-  ],
-  run(_args, _ctx) {
+  brief: {
+    es: "Muestra los comandos disponibles",
+    en: "Show available commands",
+  },
+  manual: {
+    es: [
+      "Lista todos los comandos disponibles con una descripción breve.",
+      "Para ayuda detallada de un comando concreto, usa man <comando>.",
+    ],
+    en: [
+      "Lists all available commands with a short description.",
+      "For detailed help on a specific command, use man <command>.",
+    ],
+  },
+  run(_args, ctx) {
     const lines: Line[] = [
       {
         kind: "plain",
-        segments: [{ text: "Comandos disponibles:", color: "tn-yellow" }],
+        segments: [{ text: ctx.t("helpHeader"), color: "tn-yellow" }],
       },
       { kind: "plain", segments: [{ text: "" }] },
     ];
@@ -28,37 +37,41 @@ const help: Command = {
       const right = entries[i + 1];
       if (!left) continue;
       const [leftName, leftCmd] = left;
+      const leftBrief = leftCmd.brief[ctx.lang];
 
       if (!right) {
         lines.push({
           kind: "plain",
           segments: [
             { text: "  " + leftName.padEnd(12), color: "tn-green" },
-            { text: leftCmd.brief.padEnd(36), color: "tn-text-mute" },
+            { text: leftBrief.padEnd(36), color: "tn-text-mute" },
           ],
         });
       } else {
         const [rightName, rightCmd] = right;
+        const rightBrief = rightCmd.brief[ctx.lang];
         lines.push({
           kind: "plain",
           segments: [
             { text: "  " + leftName.padEnd(12), color: "tn-green" },
-            { text: leftCmd.brief.padEnd(36), color: "tn-text-mute" },
+            { text: leftBrief.padEnd(36), color: "tn-text-mute" },
             { text: "  " + rightName.padEnd(12), color: "tn-green" },
-            { text: rightCmd.brief, color: "tn-text-mute" },
+            { text: rightBrief, color: "tn-text-mute" },
           ],
         });
       }
     }
 
     lines.push({ kind: "plain", segments: [{ text: "" }] });
+
+    const tipCmd = "man <cmd>";
     lines.push({
       kind: "plain",
       segments: [
         { text: "Tip: ", color: "tn-yellow" },
-        { text: "usa Tab para autocompletar. ", color: "tn-text-dim" },
-        { text: "man <cmd>", color: "tn-green" },
-        { text: " para ayuda detallada.", color: "tn-text-dim" },
+        { text: ctx.t("helpTip"), color: "tn-text-dim" },
+        { text: tipCmd, color: "tn-green" },
+        { text: ctx.t("helpTipMan"), color: "tn-text-dim" },
       ],
     });
 

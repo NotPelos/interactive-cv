@@ -1,11 +1,13 @@
 /** @jsxImportSource preact */
 import { useReducer, useEffect, useRef, useCallback } from "preact/hooks";
-import type { Line, TokyoColor, SkillsData } from "../lib/commands/types.js";
+import type { Line, TokyoColor, SkillsData, Lang } from "../lib/commands/types.js";
 import { commandRegistry } from "../lib/commands/index.js";
 import { parseCommand } from "../lib/parser.js";
 import { seedFs } from "../lib/fs/seed.js";
 import type { FsNode } from "../lib/fs/index.js";
 import { formatPath, resolvePath, getNode, HOME_SEGMENTS } from "../lib/fs/index.js";
+import { makeT } from "../lib/i18n/t.js";
+import { detectLang, LANG_STORAGE_KEY } from "../lib/i18n/detect.js";
 
 // ---------------------------------------------------------------------------
 // State & reducer
@@ -14,22 +16,23 @@ import { formatPath, resolvePath, getNode, HOME_SEGMENTS } from "../lib/fs/index
 interface TerminalState {
   output: Line[];
   cwd: string[];
-  prevCwd: string[] | null;  // null = no OLDPWD yet (fix 7)
+  prevCwd: string[] | null;
   history: string[];
-  historyIndex: number; // -1 = not navigating history
+  historyIndex: number;
   input: string;
-  fs: Record<string, FsNode>;
-  skillsData?: SkillsData;
+  lang: Lang;
+  // fs is not stored in state — it's derived from fsByLang + lang at runtime
 }
 
 type Action =
   | { type: "SET_INPUT"; value: string }
-  | { type: "EXECUTE"; input: string }
+  | { type: "EXECUTE"; input: string; fsByLang: Record<Lang, Record<string, FsNode>>; skillsData?: SkillsData }
   | { type: "HISTORY_UP" }
   | { type: "HISTORY_DOWN" }
   | { type: "CLEAR" }
   | { type: "CTRL_C" }
-  | { type: "APPEND_LINES"; lines: Line[] };
+  | { type: "APPEND_LINES"; lines: Line[] }
+  | { type: "SET_LANG"; lang: Lang };
 
 const INITIAL_CWD = [...HOME_SEGMENTS];
 
@@ -54,20 +57,18 @@ const WELCOME_LINES: Line[] = [
 ];
 
 interface InitialProps {
-  fs: Record<string, FsNode>;
-  skillsData?: SkillsData;
+  defaultLang: Lang;
 }
 
-function makeInitialState({ fs, skillsData }: InitialProps): TerminalState {
+function makeInitialState({ defaultLang }: InitialProps): TerminalState {
   return {
     output: WELCOME_LINES,
     cwd: INITIAL_CWD,
-    prevCwd: null,  // no OLDPWD until first successful cd (fix 7)
+    prevCwd: null,
     history: [],
     historyIndex: -1,
     input: "",
-    fs,
-    skillsData,
+    lang: defaultLang,
   };
 }
 
@@ -85,10 +86,16 @@ function buildPromptLine(cwd: string[], userInput: string): Line {
   };
 }
 
-function reducer(state: TerminalState, action: Action): TerminalState {
+function reducer(
+  state: TerminalState,
+  action: Action
+): TerminalState {
   switch (action.type) {
     case "SET_INPUT":
       return { ...state, input: action.value, historyIndex: -1 };
+
+    case "SET_LANG":
+      return { ...state, lang: action.lang };
 
     case "HISTORY_UP": {
       if (state.history.length === 0) return state;
@@ -143,6 +150,7 @@ function reducer(state: TerminalState, action: Action): TerminalState {
     case "EXECUTE": {
       const raw = action.input.trim();
       const promptLine = buildPromptLine(state.cwd, raw);
+      const activeFs = action.fsByLang[state.lang];
 
       if (raw === "") {
         return {
@@ -153,17 +161,21 @@ function reducer(state: TerminalState, action: Action): TerminalState {
         };
       }
 
-      // Append to history (skip consecutive duplicates)
       const lastEntry = state.history[state.history.length - 1];
       const newHistory =
         lastEntry === raw ? state.history : [...state.history, raw];
 
-      // Parse — handle unterminated quotes (fix 6)
       const parsed = parseCommand(raw);
       if (!parsed.ok) {
+        const tFn = makeT(state.lang);
         const syntaxErrLine: Line = {
           kind: "error",
-          segments: [{ text: `syntax error: ${parsed.error}`, color: "tn-red" }],
+          segments: [
+            {
+              text: tFn("syntaxError", { detail: parsed.error }),
+              color: "tn-red",
+            },
+          ],
         };
         return {
           ...state,
@@ -178,40 +190,57 @@ function reducer(state: TerminalState, action: Action): TerminalState {
       const command = commandRegistry.get(cmd);
 
       if (!command) {
-        const notFoundLine: Line = {
-          kind: "error",
-          segments: [
-            { text: `${cmd}: comando no encontrado. Escribe `, color: "tn-red" },
-            { text: "help", color: "tn-yellow" },
-            { text: " para ver los disponibles.", color: "tn-red" },
-          ],
-        };
+        const tFn = makeT(state.lang);
+        const notFoundLines: Line[] = [
+          {
+            kind: "error",
+            segments: [
+              { text: tFn("cmdNotFound", { cmd }), color: "tn-red" },
+              { text: "help", color: "tn-yellow" },
+              { text: tFn("cmdNotFoundHint"), color: "tn-red" },
+            ],
+          },
+        ];
         return {
           ...state,
-          output: [...state.output, promptLine, notFoundLine],
+          output: [...state.output, promptLine, ...notFoundLines],
           history: newHistory,
           input: "",
           historyIndex: -1,
         };
       }
 
+      const tFn = makeT(state.lang);
       const ctx = {
         cwd: state.cwd,
         prevCwd: state.prevCwd,
         history: newHistory,
-        fs: state.fs,
-        skillsData: state.skillsData,
+        fs: activeFs,
+        skillsData: action.skillsData,
+        lang: state.lang,
+        t: tFn,
       };
 
       const result = command.run(args, ctx);
 
-      // effect: 'clear' replaces sentinel \x00CLEAR (fix 3)
       if (result.effect === "clear") {
         return {
           ...state,
           output: [],
           cwd: result.newCwd ?? state.cwd,
           prevCwd: result.newPrevCwd ?? state.prevCwd,
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+        };
+      }
+
+      if (result.effect === "setLang" && result.lang) {
+        const newLang = result.lang;
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          lang: newLang,
           history: newHistory,
           input: "",
           historyIndex: -1,
@@ -238,7 +267,11 @@ function reducer(state: TerminalState, action: Action): TerminalState {
 // Tab completion
 // ---------------------------------------------------------------------------
 
-function getCompletions(input: string, cwd: string[], fs: Record<string, FsNode>): string[] {
+function getCompletions(
+  input: string,
+  cwd: string[],
+  fs: Record<string, FsNode>
+): string[] {
   const trimmed = input.trimStart();
   const parts = trimmed.split(/\s+/);
 
@@ -302,21 +335,51 @@ function segmentClass(color: TokyoColor | undefined): string {
 // ---------------------------------------------------------------------------
 
 interface TerminalProps {
-  initialFs?: Record<string, FsNode>;
+  initialFsByLang?: Record<Lang, Record<string, FsNode>>;
   skillsData?: SkillsData;
+  defaultLang?: Lang;
 }
 
-export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) {
+// Module-scoped fallback — avoids recreating the object on every render
+const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
+  es: seedFs,
+  en: seedFs,
+};
+
+export default function Terminal({
+  initialFsByLang,
+  skillsData,
+  defaultLang = "es",
+}: TerminalProps = {}) {
+  const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
+
   const [state, dispatch] = useReducer(
     reducer,
-    { fs: initialFs ?? seedFs, skillsData },
+    { defaultLang },
     makeInitialState
   );
+
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // fix 9: first scroll uses "instant" to avoid jarring animation on mount
   const isFirstScrollRef = useRef<boolean>(true);
+
+  const isInitialMount = useRef(true);
+
+  // Combina detección inicial y persistencia: en mount solo detecta sin escribir a
+  // localStorage si no hay mismatch real. Escritura solo ocurre en cambios deliberados.
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      const detected = detectLang(defaultLang);
+      if (detected !== state.lang) dispatch({ type: "SET_LANG", lang: detected });
+      document.documentElement.lang = detected;
+      return;
+    }
+    // Runs on deliberate lang changes (comando `lang`)
+    localStorage.setItem(LANG_STORAGE_KEY, state.lang);
+    document.documentElement.lang = state.lang;
+  }, [state.lang]); // defaultLang is stable — no need in deps
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -332,9 +395,10 @@ export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) 
     inputRef.current?.focus();
   }, []);
 
+  const activeFs = fsByLang[state.lang];
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // fix 5: modifier guards — require exact ctrl combo (no shift/alt/meta)
       if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
         dispatch({ type: "CLEAR" });
@@ -342,7 +406,6 @@ export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) 
       }
 
       if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.key.toLowerCase() === "c") {
-        // fix 4: allow native copy when user has text selected
         if ((window.getSelection()?.toString().length ?? 0) > 0) return;
         e.preventDefault();
         dispatch({ type: "CTRL_C" });
@@ -363,17 +426,15 @@ export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) 
 
       if (e.key === "Tab") {
         e.preventDefault();
-        const completions = getCompletions(state.input, state.cwd, state.fs);
+        const completions = getCompletions(state.input, state.cwd, activeFs);
         if (completions.length === 1) {
           const parts = state.input.trimStart().split(/\s+/);
           if (parts.length <= 1) {
-            // fix 8: completing a command (first word) → add trailing space
             const completed = (completions[0] ?? "") + " ";
             dispatch({ type: "SET_INPUT", value: completed });
           } else {
             const completion = completions[0] ?? "";
             parts[parts.length - 1] = completion;
-            // fix 8: completing a file (not a dir) → add trailing space
             const completed = parts.join(" ") + (completion.endsWith("/") ? "" : " ");
             dispatch({ type: "SET_INPUT", value: completed });
           }
@@ -388,11 +449,11 @@ export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) 
       }
 
       if (e.key === "Enter") {
-        dispatch({ type: "EXECUTE", input: state.input });
+        dispatch({ type: "EXECUTE", input: state.input, fsByLang, skillsData });
         return;
       }
     },
-    [state.input, state.cwd]
+    [state.input, state.cwd, activeFs, fsByLang, skillsData]
   );
 
   const handleInputChange = useCallback((e: Event) => {

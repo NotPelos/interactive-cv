@@ -1,17 +1,11 @@
 import { describe, it, expect } from "vitest";
 import find from "../../commands/find.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 import type { FsNode } from "../../fs/index.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME });
 
-// Builds a deeply nested filesystem (depth > MAX_DEPTH = 8) to trigger truncation
 function buildDeepFs(depth: number): Record<string, FsNode> {
   function makeLevel(d: number): FsNode {
     if (d === 0) {
@@ -45,12 +39,7 @@ function buildDeepFs(depth: number): Record<string, FsNode> {
   };
 }
 
-const deepCtx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: buildDeepFs(12), // 12 levels > MAX_DEPTH (8)
-};
+const deepCtx = makeCtx({ cwd: HOME, fs: buildDeepFs(12) });
 
 describe("find command", () => {
   it("finds all .md files with wildcard *.md", () => {
@@ -73,17 +62,18 @@ describe("find command", () => {
 
   it("substring match without wildcard", () => {
     const { lines } = find.run(["experience"], ctx);
-    // experience is a directory, not a file — find finds files inside it
-    // OR if pattern matches dir entries within — in our impl we match file names
-    // The minimal seed has files inside experience/ with 'softtek' and 'aubay'
-    // find 'experience' as substring should not match directory names
-    // (we only push files to results)
     expect(lines[0]?.kind).not.toBe("error");
   });
 
-  it("returns no-results message for unmatched pattern", () => {
+  it("returns no-results message for unmatched pattern (ES)", () => {
     const { lines } = find.run(["*.xyz"], ctx);
     expect(lines[0]?.segments[0]?.text).toContain("sin resultados");
+  });
+
+  it("returns no-results message for unmatched pattern (EN)", () => {
+    const enCtx = makeCtx({ cwd: HOME, lang: "en" });
+    const { lines } = find.run(["*.xyz"], enCtx);
+    expect(lines[0]?.segments[0]?.text).toContain("no results");
   });
 
   it("returns error without arguments", () => {
@@ -101,7 +91,7 @@ describe("find command", () => {
     const truncationLine = lines.find(
       (l) =>
         l.segments[0]?.color === "tn-yellow" &&
-        l.segments[0]?.text.includes("truncada")
+        (l.segments[0]?.text.includes("truncada") || l.segments[0]?.text.includes("truncated"))
     );
     expect(truncationLine).toBeDefined();
   });

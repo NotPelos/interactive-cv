@@ -5,19 +5,29 @@ export const registry: Map<string, Command> = new Map();
 
 const man: Command = {
   name: "man",
-  brief: "Manual de un comando",
-  manual: [
-    "Muestra la página de manual del comando indicado.",
-    "Incluye descripción detallada y ejemplos de uso.",
-    "Uso: man <comando>",
-  ],
-  run(args, _ctx) {
+  brief: {
+    es: "Manual de un comando",
+    en: "Command manual",
+  },
+  manual: {
+    es: [
+      "Muestra la página de manual del comando indicado.",
+      "Incluye descripción detallada y ejemplos de uso.",
+      "Uso: man <comando>",
+    ],
+    en: [
+      "Shows the manual page for the given command.",
+      "Includes detailed description and usage examples.",
+      "Usage: man <command>",
+    ],
+  },
+  run(args, ctx) {
     if (args.length === 0 || args[0] === undefined || args[0].trim() === "") {
       return {
         lines: [
           {
             kind: "error",
-            segments: [{ text: "man: ¿qué página de manual quieres?", color: "tn-red" }],
+            segments: [{ text: ctx.t("manWhatPage"), color: "tn-red" }],
           },
         ],
       };
@@ -31,19 +41,25 @@ const man: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `man: no hay entrada de manual para '${cmdName}'`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("manNoEntry", { cmd: cmdName }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
     }
 
+    const brief = cmd.brief[ctx.lang];
     const lines: Line[] = [
       {
         kind: "plain",
         segments: [
           { text: cmdName, color: "tn-magenta" },
           { text: " — ", color: "tn-text-dim" },
-          { text: cmd.brief, color: "tn-magenta" },
+          { text: brief, color: "tn-magenta" },
         ],
       },
       {
@@ -52,8 +68,8 @@ const man: Command = {
       },
     ];
 
-    const paragraphs = cmd.manual ?? [cmd.brief];
-    for (const para of paragraphs) {
+    const manualParagraphs = cmd.manual?.[ctx.lang] ?? [brief];
+    for (const para of manualParagraphs) {
       lines.push({
         kind: "plain",
         segments: [{ text: para, color: "tn-text" }],

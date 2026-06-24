@@ -3,13 +3,24 @@ import { resolvePath, getNode, formatPath } from "../fs/index.js";
 
 const ls: Command = {
   name: "ls",
-  brief: "Lista el contenido de un directorio",
-  manual: [
-    "Lista los archivos y carpetas del directorio indicado (o el actual si no se pasa path).",
-    "Los directorios aparecen en cyan con / al final; los archivos en azul.",
-    "Los archivos ocultos (prefijo .) no se muestran por defecto.",
-    "Uso: ls [path]",
-  ],
+  brief: {
+    es: "Lista el contenido de un directorio",
+    en: "List directory contents",
+  },
+  manual: {
+    es: [
+      "Lista los archivos y carpetas del directorio indicado (o el actual si no se pasa path).",
+      "Los directorios aparecen en cyan con / al final; los archivos en azul.",
+      "Los archivos ocultos (prefijo .) no se muestran por defecto.",
+      "Uso: ls [path]",
+    ],
+    en: [
+      "Lists the files and folders of the given directory (or the current one if no path is provided).",
+      "Directories appear in cyan with a trailing /; files in blue.",
+      "Hidden files (prefixed with .) are not shown by default.",
+      "Usage: ls [path]",
+    ],
+  },
   run(args, ctx) {
     const targetPath = args[0];
     const segments = targetPath
@@ -22,7 +33,10 @@ const ls: Command = {
           {
             kind: "error",
             segments: [
-              { text: `ls: ${targetPath ?? ""}: No such file or directory`, color: "tn-red" },
+              {
+                text: ctx.t("noSuchFile", { cmd: "ls", path: targetPath ?? "" }),
+                color: "tn-red",
+              },
             ],
           },
         ],
@@ -38,7 +52,10 @@ const ls: Command = {
           {
             kind: "error",
             segments: [
-              { text: `ls: ${display}: No such file or directory`, color: "tn-red" },
+              {
+                text: ctx.t("noSuchFile", { cmd: "ls", path: display }),
+                color: "tn-red",
+              },
             ],
           },
         ],

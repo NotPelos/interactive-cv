@@ -2,15 +2,11 @@ import { describe, it, expect, beforeAll } from "vitest";
 import man, { registry as manRegistry } from "../../commands/man.js";
 import cat from "../../commands/cat.js";
 import ls from "../../commands/ls.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME });
+const ctxEn = makeCtx({ cwd: HOME, lang: "en" });
 
 beforeAll(() => {
   manRegistry.set("cat", cat);
@@ -50,7 +46,6 @@ describe("man command", () => {
 
   it("returns manual paragraphs for ls", () => {
     const { lines } = man.run(["ls"], ctx);
-    // Header + separator + at least one paragraph
     expect(lines.length).toBeGreaterThanOrEqual(3);
   });
 
@@ -58,5 +53,27 @@ describe("man command", () => {
     const { lines } = man.run(["cat"], ctx);
     const textLines = lines.slice(2); // skip header and separator
     expect(textLines.every((l) => l.segments[0]?.color === "tn-text")).toBe(true);
+  });
+
+  it("brief in ES for ES context", () => {
+    const { lines } = man.run(["cat"], ctx);
+    const headerBriefSeg = lines[0]?.segments.find(
+      (s) => s.color === "tn-magenta" && s.text !== "cat"
+    );
+    expect(headerBriefSeg?.text).toBe("Muestra el contenido de un archivo");
+  });
+
+  it("brief in EN for EN context", () => {
+    const { lines } = man.run(["cat"], ctxEn);
+    const headerBriefSeg = lines[0]?.segments.find(
+      (s) => s.color === "tn-magenta" && s.text !== "cat"
+    );
+    expect(headerBriefSeg?.text).toBe("Show file contents");
+  });
+
+  it("error message in EN for EN context", () => {
+    const { lines } = man.run([], ctxEn);
+    expect(lines[0]?.kind).toBe("error");
+    expect(lines[0]?.segments[0]?.text).toBe("man: what manual page do you want?");
   });
 });

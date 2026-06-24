@@ -80,19 +80,29 @@ function walkFind(
 
 const find: Command = {
   name: "find",
-  brief: "Busca archivos por nombre",
-  manual: [
-    "Busca archivos recursivamente desde el directorio actual.",
-    "Soporta * como wildcard. Sin wildcard, hace substring match.",
-    "Uso: find <patrón>  — ejemplos: find *.md  find experience",
-  ],
+  brief: {
+    es: "Busca archivos por nombre",
+    en: "Find files by name",
+  },
+  manual: {
+    es: [
+      "Busca archivos recursivamente desde el directorio actual.",
+      "Soporta * como wildcard. Sin wildcard, hace substring match.",
+      "Uso: find <patrón>  — ejemplos: find *.md  find experience",
+    ],
+    en: [
+      "Recursively searches files from the current directory.",
+      "Supports * as a wildcard. Without wildcard, does substring match.",
+      "Usage: find <pattern>  — examples: find *.md  find experience",
+    ],
+  },
   run(args, ctx) {
     if (args.length === 0 || args[0] === undefined || args[0].trim() === "") {
       return {
         lines: [
           {
             kind: "error",
-            segments: [{ text: "find: uso: find <patrón>", color: "tn-red" }],
+            segments: [{ text: ctx.t("findUsage"), color: "tn-red" }],
           },
         ],
       };
@@ -106,7 +116,7 @@ const find: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: "find: error al acceder al directorio actual", color: "tn-red" }],
+            segments: [{ text: ctx.t("findCwdError"), color: "tn-red" }],
           },
         ],
       };
@@ -132,7 +142,7 @@ const find: Command = {
         lines: [
           {
             kind: "plain",
-            segments: [{ text: "(sin resultados)", color: "tn-text-dim" }],
+            segments: [{ text: ctx.t("noResults"), color: "tn-text-dim" }],
           },
         ],
       };
@@ -146,7 +156,7 @@ const find: Command = {
     if (walkState.truncated) {
       lines.push({
         kind: "plain",
-        segments: [{ text: "(búsqueda truncada al alcanzar el límite de profundidad/nodos)", color: "tn-yellow" }],
+        segments: [{ text: ctx.t("searchTruncated"), color: "tn-yellow" }],
       });
     }
 

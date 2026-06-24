@@ -1,15 +1,9 @@
 import { describe, it, expect } from "vitest";
 import cat from "../../commands/cat.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 
 const HOME = ["home", "notpelos"];
-const minFs = getMinimalSeed();
-const ctx = {
-  cwd: HOME,
-  prevCwd: HOME as string[] | null,
-  history: [],
-  fs: minFs,
-};
+const ctx = makeCtx({ cwd: HOME });
 
 describe("cat command", () => {
   it("outputs file content (md renders to lines)", () => {
@@ -55,7 +49,20 @@ describe("cat command", () => {
 
   it("json file renders as plain text (tn-text color)", () => {
     const { lines } = cat.run(["skills.json"], ctx);
-    // JSON is not rendered as MD — all segments should have tn-text color
     expect(lines.every((l) => l.segments[0]?.color === "tn-text")).toBe(true);
+  });
+
+  it("error message is in EN when lang=en", () => {
+    const enCtx = makeCtx({ cwd: HOME, lang: "en" });
+    const { lines } = cat.run(["nonexistent.md"], enCtx);
+    expect(lines[0]?.kind).toBe("error");
+    expect(lines[0]?.segments[0]?.text).toContain("No such file or directory");
+  });
+
+  it("missing arg error message is in EN when lang=en", () => {
+    const enCtx = makeCtx({ cwd: HOME, lang: "en" });
+    const { lines } = cat.run([], enCtx);
+    expect(lines[0]?.kind).toBe("error");
+    expect(lines[0]?.segments[0]?.text).toBe("cat: missing file operand");
   });
 });

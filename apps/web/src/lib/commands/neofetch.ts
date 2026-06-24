@@ -51,7 +51,7 @@ function buildTopLangs(skillsData: SkillsData | undefined): string {
     .join(" · ");
 }
 
-function calcUptime(): string {
+function calcUptime(lang: "es" | "en"): string {
   const startYear = 2021;
   const startMonth = 11; // November
   const now = new Date();
@@ -59,17 +59,31 @@ function calcUptime(): string {
     (now.getFullYear() - startYear) * 12 + (now.getMonth() + 1 - startMonth);
   const years = Math.floor(totalMonths / 12);
   const months = totalMonths % 12;
+
+  if (lang === "en") {
+    if (months === 0) return `${years} years in backend`;
+    return `${years} years ${months} months in backend`;
+  }
   if (months === 0) return `${years} años en backend`;
   return `${years} años ${months} meses en backend`;
 }
 
 const neofetch: Command = {
   name: "neofetch",
-  brief: "Info del sistema en ASCII art",
-  manual: [
-    "Muestra las stats del sistema al estilo neofetch: logo Java + info de NotPelos.",
-    "El uptime se calcula desde Nov 2021 (primer empleo). El conteo de archivos es en vivo.",
-  ],
+  brief: {
+    es: "Info del sistema en ASCII art",
+    en: "System info as ASCII art",
+  },
+  manual: {
+    es: [
+      "Muestra las stats del sistema al estilo neofetch: logo Java + info de NotPelos.",
+      "El uptime se calcula desde Nov 2021 (primer empleo). El conteo de archivos es en vivo.",
+    ],
+    en: [
+      "Displays system stats neofetch-style: Java logo + NotPelos info.",
+      "Uptime is calculated from Nov 2021 (first job). File count is live.",
+    ],
+  },
   run(_args, ctx) {
     // Count files in /home/notpelos
     const homeNode = ctx.fs["home"];
@@ -81,7 +95,7 @@ const neofetch: Command = {
       }
     }
 
-    const uptime = calcUptime();
+    const uptime = calcUptime(ctx.lang);
 
     const stats: Array<{ label: string; value: string }> = [
       { label: "notpelos@curriculum", value: "" },

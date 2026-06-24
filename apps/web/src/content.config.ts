@@ -1,11 +1,13 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
+const langEnum = z.enum(["es", "en"]);
+
 const about = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/about" }),
   schema: z.object({
     title: z.string(),
-    lang: z.literal("es"),
+    lang: langEnum,
   }),
 });
 
@@ -19,7 +21,7 @@ const experience = defineCollection({
     location: z.string(),
     client: z.string().optional(),
     stack: z.array(z.string()),
-    lang: z.literal("es"),
+    lang: langEnum,
     order: z.number(),
   }),
 });
@@ -31,7 +33,7 @@ const projects = defineCollection({
     pitch: z.string(),
     repo: z.string().url(),
     stack: z.array(z.string()),
-    lang: z.literal("es"),
+    lang: langEnum,
     order: z.number(),
   }),
 });
@@ -40,7 +42,7 @@ const education = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/education" }),
   schema: z.object({
     title: z.string(),
-    lang: z.literal("es"),
+    lang: langEnum,
   }),
 });
 

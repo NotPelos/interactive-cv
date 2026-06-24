@@ -1,17 +1,11 @@
 import { describe, it, expect } from "vitest";
 import grep from "../../commands/grep.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 import type { FsNode } from "../../fs/index.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME });
 
-// Builds a deeply nested filesystem (depth > MAX_DEPTH = 8) to trigger truncation in grep
 function buildDeepFsWithContent(_depth: number): Record<string, FsNode> {
   function makeLevel(d: number): FsNode {
     if (d === 0) {
@@ -37,7 +31,7 @@ function buildDeepFsWithContent(_depth: number): Record<string, FsNode> {
           type: "directory",
           name: "notpelos",
           children: {
-            deep: makeLevel(12), // 12 levels > MAX_DEPTH (8)
+            deep: makeLevel(12),
           },
         },
       },
@@ -45,12 +39,7 @@ function buildDeepFsWithContent(_depth: number): Record<string, FsNode> {
   };
 }
 
-const deepCtx = {
-  cwd: HOME,
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: buildDeepFsWithContent(12),
-};
+const deepCtx = makeCtx({ cwd: HOME, fs: buildDeepFsWithContent(12) });
 
 describe("grep command", () => {
   it("finds pattern in a single file", () => {
@@ -66,9 +55,15 @@ describe("grep command", () => {
     expect(yellowSeg).toBeDefined();
   });
 
-  it("returns no-results message when pattern not found", () => {
+  it("returns no-results message when pattern not found (ES)", () => {
     const { lines } = grep.run(["ZZZNOTEXIST", "about.md"], ctx);
     expect(lines[0]?.segments[0]?.text).toContain("sin resultados");
+  });
+
+  it("returns no-results message in EN when lang=en", () => {
+    const enCtx = makeCtx({ cwd: HOME, lang: "en" });
+    const { lines } = grep.run(["ZZZNOTEXIST", "about.md"], enCtx);
+    expect(lines[0]?.segments[0]?.text).toContain("no results");
   });
 
   it("searches recursively in a directory", () => {
@@ -99,7 +94,7 @@ describe("grep command", () => {
     const truncationLine = lines.find(
       (l) =>
         l.segments[0]?.color === "tn-yellow" &&
-        l.segments[0]?.text.includes("truncada")
+        (l.segments[0]?.text.includes("truncada") || l.segments[0]?.text.includes("truncated"))
     );
     expect(truncationLine).toBeDefined();
   });

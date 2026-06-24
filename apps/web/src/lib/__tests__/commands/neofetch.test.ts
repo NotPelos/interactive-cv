@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import neofetch from "../../commands/neofetch.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 import type { SkillsData } from "../../commands/types.js";
 
-const BASE_CTX = {
-  cwd: ["home", "notpelos"],
-  prevCwd: null as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const BASE_CTX = makeCtx({});
 
 const SKILLS_DATA: SkillsData = {
   languages: {
@@ -27,7 +22,7 @@ const SKILLS_DATA: SkillsData = {
 
 describe("neofetch command", () => {
   it("renders output lines", () => {
-    const { lines } = neofetch.run([], { ...BASE_CTX });
+    const { lines } = neofetch.run([], BASE_CTX);
     expect(lines.length).toBeGreaterThan(0);
   });
 
@@ -42,10 +37,8 @@ describe("neofetch command", () => {
   it("lists top 3 languages sorted by level desc when skillsData is provided", () => {
     const { lines } = neofetch.run([], { ...BASE_CTX, skillsData: SKILLS_DATA });
     const allText = lines.flatMap((l) => l.segments.map((s) => s.text)).join(" ");
-    // Java (5/5) must appear before SQL (4/5) — both must be present
     expect(allText).toContain("Java 5/5");
     expect(allText).toContain("Sql 4/5");
-    // Only 3 langs: lua / javascript share level 3 with yearsApprox 2 — one of them appears as #3
     expect(allText).toContain("/5");
   });
 
@@ -68,5 +61,23 @@ describe("neofetch command", () => {
     );
     const valueSegs = topLangsLine?.segments.find((s) => s.text.includes("Beta"));
     expect(valueSegs).toBeDefined();
+  });
+
+  it("uptime in EN contains 'in backend'", () => {
+    const enCtx = makeCtx({ lang: "en" });
+    const { lines } = neofetch.run([], enCtx);
+    const allText = lines.flatMap((l) => l.segments.map((s) => s.text)).join(" ");
+    expect(allText).toContain("in backend");
+    // EN uptime uses 'year' not 'año'
+    expect(allText).not.toContain("año");
+  });
+
+  it("uptime in ES contains 'en backend'", () => {
+    const esCtx = makeCtx({ lang: "es" });
+    const { lines } = neofetch.run([], esCtx);
+    const allText = lines.flatMap((l) => l.segments.map((s) => s.text)).join(" ");
+    expect(allText).toContain("en backend");
+    // ES uptime uses 'año' not 'year'
+    expect(allText).not.toContain("years");
   });
 });

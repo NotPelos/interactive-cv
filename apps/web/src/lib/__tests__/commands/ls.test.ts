@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import ls from "../../commands/ls.js";
-import { getMinimalSeed } from "../../fs/seed.js";
+import { makeCtx } from "../helpers/ctx.js";
 
 const HOME = ["home", "notpelos"];
-const ctx = {
-  cwd: HOME,
-  prevCwd: HOME as string[] | null,
-  history: [],
-  fs: getMinimalSeed(),
-};
+const ctx = makeCtx({ cwd: HOME });
 
 describe("ls command", () => {
   it("lists visible files in home dir without hidden entries", () => {
@@ -24,7 +19,6 @@ describe("ls command", () => {
   it("lists an explicit path", () => {
     const { lines } = ls.run(["experience"], ctx);
     const texts = lines.map((l) => l.segments[0]?.text ?? "");
-    // Minimal seed has real experience files
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.some((t) => t.endsWith(".md"))).toBe(true);
   });

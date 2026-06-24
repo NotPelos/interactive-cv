@@ -82,19 +82,29 @@ function grepNode(
 
 const grep: Command = {
   name: "grep",
-  brief: "Busca texto en archivos",
-  manual: [
-    "Busca un patrón (literal, sin regex) en un archivo o directorio.",
-    "En directorios, la búsqueda es recursiva. Máximo 200 resultados.",
-    "Uso: grep <patrón> <archivo|directorio>",
-  ],
+  brief: {
+    es: "Busca texto en archivos",
+    en: "Search text in files",
+  },
+  manual: {
+    es: [
+      "Busca un patrón (literal, sin regex) en un archivo o directorio.",
+      "En directorios, la búsqueda es recursiva. Máximo 200 resultados.",
+      "Uso: grep <patrón> <archivo|directorio>",
+    ],
+    en: [
+      "Searches for a literal pattern (no regex) in a file or directory.",
+      "In directories, the search is recursive. Maximum 200 results.",
+      "Usage: grep <pattern> <file|directory>",
+    ],
+  },
   run(args, ctx) {
     if (args.length < 2 || args[0] === undefined || args[1] === undefined) {
       return {
         lines: [
           {
             kind: "error",
-            segments: [{ text: "grep: uso: grep <patrón> <archivo|directorio>", color: "tn-red" }],
+            segments: [{ text: ctx.t("grepUsage"), color: "tn-red" }],
           },
         ],
       };
@@ -109,7 +119,12 @@ const grep: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `grep: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "grep", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -122,7 +137,12 @@ const grep: Command = {
         lines: [
           {
             kind: "error",
-            segments: [{ text: `grep: ${target}: No such file or directory`, color: "tn-red" }],
+            segments: [
+              {
+                text: ctx.t("noSuchFile", { cmd: "grep", path: target }),
+                color: "tn-red",
+              },
+            ],
           },
         ],
       };
@@ -142,7 +162,7 @@ const grep: Command = {
         lines: [
           {
             kind: "plain",
-            segments: [{ text: "(sin resultados)", color: "tn-text-dim" }],
+            segments: [{ text: ctx.t("noResults"), color: "tn-text-dim" }],
           },
         ],
       };
@@ -164,7 +184,7 @@ const grep: Command = {
     if (walkState.truncated) {
       lines.push({
         kind: "plain",
-        segments: [{ text: "(búsqueda truncada al alcanzar el límite de profundidad/nodos)", color: "tn-yellow" }],
+        segments: [{ text: ctx.t("searchTruncated"), color: "tn-yellow" }],
       });
     }
 

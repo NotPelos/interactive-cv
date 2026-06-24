@@ -44,6 +44,8 @@ export interface Line {
   segments: Segment[];
 }
 
+export type Lang = "es" | "en";
+
 // Context passed to every command at runtime
 export interface Ctx {
   cwd: string[];                // current path segments (e.g. ["home","notpelos"])
@@ -51,19 +53,24 @@ export interface Ctx {
   history: string[];            // command history list
   fs: Record<string, FsNode>;   // root children
   skillsData?: SkillsData;      // parsed skills.json — optional so tests without it still compile
+  lang: Lang;                   // active UI language
+  t: (key: string, args?: Record<string, string>) => string; // i18n helper
 }
+
+export type CommandEffect = "clear" | "setLang";
 
 export type CommandResult = {
   lines: Line[];
-  effect?: "clear";
+  effect?: CommandEffect;
   newCwd?: string[];
   newPrevCwd?: string[];
+  lang?: Lang; // only when effect === 'setLang'
 };
 
 export interface Command {
   name: string;
-  brief: string;
-  manual?: string[];
+  brief: { es: string; en: string };
+  manual?: { es: string[]; en: string[] };
   run(args: string[], ctx: Ctx): CommandResult;
 }
 
