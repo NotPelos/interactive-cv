@@ -3,7 +3,7 @@
 # Docs: https://fly.io/docs/reference/configuration/
 
 app = "notpelos-cv-api"
-primary_region = "mad"   # Madrid (closest to Sevilla)
+primary_region = "cdg"   # París (mad/Madrid está deprecada en Fly.io 2026)
 
 [build]
   dockerfile = "Dockerfile"
