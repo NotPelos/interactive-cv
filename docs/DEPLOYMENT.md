@@ -64,14 +64,14 @@ flyctl logs
 
 ### `.github/workflows/web.yml`
 Trigger: push a `main` o PR.
-- Setup Node 20, pnpm.
+- Setup Node 22 LTS, pnpm.
 - Install + lint + typecheck + build.
-- `npm audit`.
+- `pnpm audit`.
 - (Despliegue lo hace Cloudflare Pages automático al push.)
 
 ### `.github/workflows/worker.yml`
 Trigger: push con cambios en `apps/worker/**`.
-- Setup Node 20.
+- Setup Node 22 LTS.
 - `wrangler deploy` con `CLOUDFLARE_API_TOKEN` en secrets.
 
 ### `.github/workflows/api.yml`

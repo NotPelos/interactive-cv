@@ -1,9 +1,10 @@
 /** @jsxImportSource preact */
 import { useReducer, useEffect, useRef, useCallback } from "preact/hooks";
-import type { Line, TokyoColor } from "../lib/commands/types.js";
+import type { Line, TokyoColor, SkillsData } from "../lib/commands/types.js";
 import { commandRegistry } from "../lib/commands/index.js";
 import { parseCommand } from "../lib/parser.js";
 import { seedFs } from "../lib/fs/seed.js";
+import type { FsNode } from "../lib/fs/index.js";
 import { formatPath, resolvePath, getNode, HOME_SEGMENTS } from "../lib/fs/index.js";
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,8 @@ interface TerminalState {
   history: string[];
   historyIndex: number; // -1 = not navigating history
   input: string;
+  fs: Record<string, FsNode>;
+  skillsData?: SkillsData;
 }
 
 type Action =
@@ -50,14 +53,23 @@ const WELCOME_LINES: Line[] = [
   { kind: "plain", segments: [{ text: "" }] },
 ];
 
-const INITIAL_STATE: TerminalState = {
-  output: WELCOME_LINES,
-  cwd: INITIAL_CWD,
-  prevCwd: null,  // no OLDPWD until first successful cd (fix 7)
-  history: [],
-  historyIndex: -1,
-  input: "",
-};
+interface InitialProps {
+  fs: Record<string, FsNode>;
+  skillsData?: SkillsData;
+}
+
+function makeInitialState({ fs, skillsData }: InitialProps): TerminalState {
+  return {
+    output: WELCOME_LINES,
+    cwd: INITIAL_CWD,
+    prevCwd: null,  // no OLDPWD until first successful cd (fix 7)
+    history: [],
+    historyIndex: -1,
+    input: "",
+    fs,
+    skillsData,
+  };
+}
 
 function buildPromptLine(cwd: string[], userInput: string): Line {
   const cwdDisplay = formatPath(cwd);
@@ -187,7 +199,8 @@ function reducer(state: TerminalState, action: Action): TerminalState {
         cwd: state.cwd,
         prevCwd: state.prevCwd,
         history: newHistory,
-        fs: seedFs,
+        fs: state.fs,
+        skillsData: state.skillsData,
       };
 
       const result = command.run(args, ctx);
@@ -225,7 +238,7 @@ function reducer(state: TerminalState, action: Action): TerminalState {
 // Tab completion
 // ---------------------------------------------------------------------------
 
-function getCompletions(input: string, cwd: string[]): string[] {
+function getCompletions(input: string, cwd: string[], fs: Record<string, FsNode>): string[] {
   const trimmed = input.trimStart();
   const parts = trimmed.split(/\s+/);
 
@@ -247,7 +260,7 @@ function getCompletions(input: string, cwd: string[]): string[] {
 
   if (!dirSegments) return [];
 
-  const node = getNode(dirSegments, seedFs);
+  const node = getNode(dirSegments, fs);
   if (!node || node.type !== "directory") return [];
 
   return Object.values(node.children)
@@ -274,6 +287,7 @@ const COLOR_CLASS: Record<TokyoColor, string> = {
   "tn-yellow": "text-tn-yellow",
   "tn-magenta": "text-tn-magenta",
   "tn-cyan": "text-tn-cyan",
+  "tn-border": "text-tn-border",
 };
 
 function segmentClass(color: TokyoColor | undefined): string {
@@ -287,8 +301,17 @@ function segmentClass(color: TokyoColor | undefined): string {
 // Main Terminal component
 // ---------------------------------------------------------------------------
 
-export default function Terminal() {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+interface TerminalProps {
+  initialFs?: Record<string, FsNode>;
+  skillsData?: SkillsData;
+}
+
+export default function Terminal({ initialFs, skillsData }: TerminalProps = {}) {
+  const [state, dispatch] = useReducer(
+    reducer,
+    { fs: initialFs ?? seedFs, skillsData },
+    makeInitialState
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -340,7 +363,7 @@ export default function Terminal() {
 
       if (e.key === "Tab") {
         e.preventDefault();
-        const completions = getCompletions(state.input, state.cwd);
+        const completions = getCompletions(state.input, state.cwd, state.fs);
         if (completions.length === 1) {
           const parts = state.input.trimStart().split(/\s+/);
           if (parts.length <= 1) {

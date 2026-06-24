@@ -1,5 +1,24 @@
 import type { FsNode } from "../fs/index.js";
 
+// ---------------------------------------------------------------------------
+// Skills data shape — mirrors skills.json structure validated by Zod at build time
+// ---------------------------------------------------------------------------
+
+export interface SkillLevel {
+  level: number;
+  yearsApprox: number;
+  note?: string;
+}
+
+export interface SkillsData {
+  languages: Record<string, SkillLevel>;
+  frameworks: Record<string, number>;
+  infra: Record<string, number>;
+  databases: Record<string, number>;
+  methods: string[];
+  soft: string[];
+}
+
 // Tokyo Night color tokens — only keys matching Tailwind tn-* classes
 export type TokyoColor =
   | "tn-text"
@@ -10,7 +29,8 @@ export type TokyoColor =
   | "tn-red"
   | "tn-yellow"
   | "tn-magenta"
-  | "tn-cyan";
+  | "tn-cyan"
+  | "tn-border";
 
 export interface Segment {
   text: string;
@@ -30,6 +50,7 @@ export interface Ctx {
   prevCwd: string[] | null;     // previous cwd for `cd -`; null = OLDPWD not set yet
   history: string[];            // command history list
   fs: Record<string, FsNode>;   // root children
+  skillsData?: SkillsData;      // parsed skills.json — optional so tests without it still compile
 }
 
 export type CommandResult = {
@@ -42,6 +63,7 @@ export type CommandResult = {
 export interface Command {
   name: string;
   brief: string;
+  manual?: string[];
   run(args: string[], ctx: Ctx): CommandResult;
 }
 

@@ -89,10 +89,10 @@ Monorepo simple con pnpm workspaces para el lado JS y Maven aparte para Java.
 
 ## Versiones objetivo
 
-- Node 20 LTS, pnpm 9
-- Astro 4.x, TypeScript 5.x, Tailwind 3.x
+- Node 22 LTS, pnpm 10
+- Astro 6.x, TypeScript 5.x, Tailwind 3.x, Preact 10
 - Java 21 LTS, Spring Boot 3.x, Maven 3.9
-- Wrangler 3.x para el Worker
+- Wrangler 4.x para el Worker
 
 ## Performance budget
 

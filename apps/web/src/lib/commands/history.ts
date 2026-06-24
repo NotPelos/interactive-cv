@@ -3,6 +3,10 @@ import type { Command, Line } from "./types.js";
 const history: Command = {
   name: "history",
   brief: "Muestra el historial de comandos",
+  manual: [
+    "Lista los comandos ejecutados en esta sesión numerados.",
+    "Usa las flechas ↑ / ↓ para navegar por el historial desde el prompt.",
+  ],
   run(_args, ctx) {
     if (ctx.history.length === 0) {
       return {

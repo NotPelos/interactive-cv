@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { resolvePath, getNode, formatPath } from "../fs/index.js";
-import { seedFs } from "../fs/seed.js";
+import { getMinimalSeed } from "../fs/seed.js";
+
+const seedFs = getMinimalSeed();
 
 const HOME = ["home", "notpelos"];
 

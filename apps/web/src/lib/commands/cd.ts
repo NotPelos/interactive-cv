@@ -4,6 +4,11 @@ import { resolvePath, getNode, HOME_SEGMENTS } from "../fs/index.js";
 const cd: Command = {
   name: "cd",
   brief: "Cambia el directorio actual",
+  manual: [
+    "Navega a un directorio. Sin args va a home (~).",
+    "Soporta rutas relativas, absolutas, ~ y cd - (vuelve al directorio anterior).",
+    "Uso: cd [path]  — ejemplos: cd experience  cd ..  cd ~  cd -",
+  ],
   run(args, ctx) {
     // cd with no args → go home
     if (args.length === 0 || args[0] === undefined) {

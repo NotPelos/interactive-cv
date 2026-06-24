@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import ls from "../../commands/ls.js";
-import { seedFs } from "../../fs/seed.js";
+import { getMinimalSeed } from "../../fs/seed.js";
 
 const HOME = ["home", "notpelos"];
 const ctx = {
   cwd: HOME,
   prevCwd: HOME as string[] | null,
   history: [],
-  fs: seedFs,
+  fs: getMinimalSeed(),
 };
 
 describe("ls command", () => {
@@ -24,7 +24,9 @@ describe("ls command", () => {
   it("lists an explicit path", () => {
     const { lines } = ls.run(["experience"], ctx);
     const texts = lines.map((l) => l.segments[0]?.text ?? "");
-    expect(texts).toContain("README.md");
+    // Minimal seed has real experience files
+    expect(texts.length).toBeGreaterThan(0);
+    expect(texts.some((t) => t.endsWith(".md"))).toBe(true);
   });
 
   it("returns error for non-existent path", () => {

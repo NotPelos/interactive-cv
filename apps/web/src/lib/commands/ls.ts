@@ -4,6 +4,12 @@ import { resolvePath, getNode, formatPath } from "../fs/index.js";
 const ls: Command = {
   name: "ls",
   brief: "Lista el contenido de un directorio",
+  manual: [
+    "Lista los archivos y carpetas del directorio indicado (o el actual si no se pasa path).",
+    "Los directorios aparecen en cyan con / al final; los archivos en azul.",
+    "Los archivos ocultos (prefijo .) no se muestran por defecto.",
+    "Uso: ls [path]",
+  ],
   run(args, ctx) {
     const targetPath = args[0];
     const segments = targetPath

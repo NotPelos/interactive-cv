@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
 import cd from "../../commands/cd.js";
-import { seedFs } from "../../fs/seed.js";
+import { getMinimalSeed } from "../../fs/seed.js";
 
 const HOME = ["home", "notpelos"];
 const ctx = {
   cwd: HOME,
   prevCwd: ["home"] as string[] | null,
   history: [],
-  fs: seedFs,
+  fs: getMinimalSeed(),
 };
 
 describe("cd command", () => {

@@ -1,6 +1,35 @@
 ---
+import { getCollection } from "astro:content";
 import Terminal from "../components/Terminal.tsx";
+import { buildFsFromContent } from "../lib/fs/seed.js";
+import type { ContentEntry } from "../lib/fs/seed.js";
+import type { SkillsData } from "../lib/commands/types.js";
+import skillsRaw from "../content/skills/skills.json";
+import { skillsSchema } from "../content.config.ts";
 import "../styles/global.css";
+
+// Build virtual FS from content collections at build/SSR time.
+const aboutEntries = await getCollection("about");
+const experienceEntries = await getCollection("experience");
+const projectsEntries = await getCollection("projects");
+const educationEntries = await getCollection("education");
+
+// Validate skills.json shape at build time — throws with a clear Zod error if malformed.
+// Cast to SkillsData: the Zod schema and the TS interface are structurally identical at runtime.
+const skillsData = skillsSchema.parse(skillsRaw) as unknown as SkillsData;
+
+// Map Astro CollectionEntry to the internal shape
+function toContentEntry(e: { id: string; body?: string; data: Record<string, unknown> }): ContentEntry {
+  return { id: e.id, body: e.body, data: e.data };
+}
+
+const initialFs = buildFsFromContent({
+  about: aboutEntries.map(toContentEntry),
+  experience: experienceEntries.map(toContentEntry),
+  projects: projectsEntries.map(toContentEntry),
+  education: educationEntries.map(toContentEntry),
+  skillsJson: skillsData as unknown as Record<string, unknown>,
+});
 ---
 
 <!doctype html>
@@ -23,7 +52,7 @@ import "../styles/global.css";
         <span class="ml-3 text-tn-text-dim text-sm">notpelos.pages.dev</span>
       </div>
 
-      <!-- Recruiter escape hatch — links to /cv (Fase 3 follow-up: 404 until built) -->
+      <!-- Recruiter escape hatch -->
       <a
         href="/cv"
         class="text-tn-blue text-sm hover:text-tn-text transition-colors"
@@ -35,8 +64,13 @@ import "../styles/global.css";
 
     <!-- Terminal island (all interaction happens here) -->
     <main>
-      <Terminal client:load />
+      <Terminal client:load initialFs={initialFs} skillsData={skillsData} />
     </main>
+
+    <!-- Hint for non-devs -->
+    <p class="text-tn-text-dim text-xs text-center pb-2 select-none pointer-events-none">
+      // no eres dev? escribe `recruiter` o pulsa 👔 arriba a la derecha
+    </p>
 
   </body>
 </html>

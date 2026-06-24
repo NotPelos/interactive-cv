@@ -1,0 +1,42 @@
+{
+  "languages": {
+    "java":       { "level": 5, "yearsApprox": 5,   "note": "Spring Boot, Spring Cloud, JPA, async, JVM tuning básico" },
+    "sql":        { "level": 4, "yearsApprox": 4,   "note": "PostgreSQL, DB2, Snowflake, queries de reconciliación" },
+    "python":     { "level": 3, "yearsApprox": 2,   "note": "Bots Discord, scripting de utilidad" },
+    "javascript": { "level": 3, "yearsApprox": 2,   "note": "Node.js para debug; Angular en mantenimiento" },
+    "lua":        { "level": 3, "yearsApprox": 2,   "note": "Scripting de servidores FiveM" },
+    "typescript": { "level": 2, "yearsApprox": 0.5, "note": "Aprendiendo con este proyecto (Astro)" }
+  },
+  "frameworks": {
+    "spring-boot":  5,
+    "spring-cloud": 4,
+    "angular":      3,
+    "ionic":        3,
+    "node-js":      3,
+    "discord-py":   3
+  },
+  "infra": {
+    "docker":     4,
+    "git":        5,
+    "jenkins":    4,
+    "kafka":      4,
+    "kibana":     4,
+    "grafana":    4,
+    "linux":      4,
+    "kubernetes": 3
+  },
+  "databases": {
+    "postgresql": 4,
+    "mongodb":    3,
+    "db2":        3,
+    "snowflake":  3,
+    "sql-server": 3
+  },
+  "methods":  ["scrum", "agile", "code review", "pair programming", "tdd-básico"],
+  "soft": [
+    "Debug y troubleshooting profundo",
+    "Comunicación cross-functional",
+    "Mentoring de juniors",
+    "Documentación técnica clara"
+  ]
+}
