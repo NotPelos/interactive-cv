@@ -46,9 +46,13 @@ jobs:
       # TODO: activar Dependency-Check cuando esté configurado el plugin en pom.xml
       # El plugin org.owasp:dependency-check-maven debe añadirse al pom.xml
       # con <failBuildOnCVSS>7</failBuildOnCVSS> antes de quitar continue-on-error.
+      # NVD DB download tarda 5-15 min en runner fresco. Con timeout-minutes
+      # cortamos el step si se atasca para no bloquear el job de deploy
+      # (que tiene needs: ci). El step sigue siendo opcional con continue-on-error.
       - name: OWASP Dependency-Check (opcional, no bloquea aún)
         working-directory: apps/api
         continue-on-error: true
+        timeout-minutes: 3
         run: |
           ./mvnw -B org.owasp:dependency-check-maven:check \
             -Dformat=HTML \
