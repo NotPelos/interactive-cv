@@ -25,6 +25,16 @@ export default {
           "monospace",
         ],
       },
+      animation: {
+        // 530 ms — cadencia clásica xterm (DESIGN.md)
+        blink: "blink 530ms step-end infinite",
+      },
+      keyframes: {
+        blink: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
+        },
+      },
     },
   },
   plugins: [],

@@ -7,22 +7,29 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "lint": "eslint . --ext .ts,.astro --max-warnings 0"
+    "lint": "eslint . --ext .ts,.tsx,.astro --max-warnings 0",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@astrojs/sitemap": "3.2.1",
-    "@astrojs/tailwind": "^5.1.0",
-    "astro": "^4.16.0",
+    "@astrojs/preact": "^6.0.0",
+    "@astrojs/sitemap": "^3.7.3",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "astro": "^6.4.8",
+    "preact": "^10",
     "tailwindcss": "^3.4.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^3.2.6",
     "astro-eslint-parser": "^1.0.2",
+    "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
     "eslint-plugin-astro": "^1.2.4",
     "eslint-plugin-security": "^3.0.1",
-    "typescript": "^5.5.0"
+    "jsdom": "^24",
+    "typescript": "^5.5.0",
+    "vitest": "^3.2.6"
   }
 }

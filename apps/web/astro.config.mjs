@@ -1,9 +1,18 @@
 import { defineConfig } from "astro/config";
-import tailwind from "@astrojs/tailwind";
 import sitemap from "@astrojs/sitemap";
+import preact from "@astrojs/preact";
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
 
-// Sin adapter: SSG por defecto. Cloudflare Pages adapter va en Fase 2 (deploy).
+// Sin adapter: SSG por defecto. Cloudflare Pages adapter va antes del primer deploy.
 export default defineConfig({
   site: "https://notpelos.pages.dev",
-  integrations: [tailwind(), sitemap()],
+  integrations: [preact({ compat: false }), sitemap()],
+  vite: {
+    css: {
+      postcss: {
+        plugins: [tailwindcss(), autoprefixer()],
+      },
+    },
+  },
 });

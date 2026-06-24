@@ -1,45 +1,42 @@
 ---
-// Smoke test — hello world placeholder.
-// El terminal completo (filesystem virtual, comandos, i18n) llega en Fase 2.
+import Terminal from "../components/Terminal.tsx";
+import "../styles/global.css";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>notpelos@cv</title>
-    <meta name="description" content="Interactive CV — NotPelos" />
-    <!-- JetBrains Mono via Google Fonts. CSP permite fonts.googleapis.com en Fase 2 headers. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <meta name="description" content="CV interactivo de NotPelos — desarrollador backend Java." />
   </head>
-  <body class="bg-tn-bg text-tn-text font-mono min-h-screen flex items-center justify-center">
-    <div class="text-base leading-relaxed">
-      <p>
-        <span class="text-tn-blue">notpelos@cv</span><span class="text-tn-text-dim">:~$</span>
-        <span class="ml-2">echo &quot;hello, world&quot;</span>
-      </p>
-      <p class="text-tn-green">hello, world</p>
-      <p>
-        <span class="text-tn-blue">notpelos@cv</span><span class="text-tn-text-dim">:~$</span>
-        <span class="ml-2 cursor-blink">_</span>
-      </p>
-    </div>
+  <body class="bg-tn-bg text-tn-text font-mono min-h-screen overflow-x-hidden">
 
-    <style>
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0; }
-      }
-      /* 530 ms — cadencia clásica xterm según DESIGN.md */
-      .cursor-blink {
-        animation: blink 530ms step-end infinite;
-      }
-    </style>
+    <!-- Chrome bar: dots + URL + recruiter button -->
+    <header class="sticky top-0 z-10 bg-tn-elev border-b border-tn-border flex items-center justify-between px-4 py-2">
+      <!-- macOS-style traffic lights (decorative) -->
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-3 h-3 rounded-full bg-tn-red"></span>
+        <span class="inline-block w-3 h-3 rounded-full bg-tn-yellow"></span>
+        <span class="inline-block w-3 h-3 rounded-full bg-tn-green"></span>
+        <span class="ml-3 text-tn-text-dim text-sm">notpelos.pages.dev</span>
+      </div>
+
+      <!-- Recruiter escape hatch — links to /cv (Fase 3 follow-up: 404 until built) -->
+      <a
+        href="/cv"
+        class="text-tn-blue text-sm hover:text-tn-text transition-colors"
+        title="Vista clásica para reclutadores"
+      >
+        👔 recruiter
+      </a>
+    </header>
+
+    <!-- Terminal island (all interaction happens here) -->
+    <main>
+      <Terminal client:load />
+    </main>
+
   </body>
 </html>

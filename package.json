@@ -11,7 +11,11 @@
     "pnpm": ">=10"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"]
+    "onlyBuiltDependencies": ["esbuild", "sharp"],
+    "overrides": {
+      "undici": ">=6.27.0",
+      "ws": ">=8.21.0"
+    }
   },
   "scripts": {
     "dev:web": "pnpm --filter web dev",
