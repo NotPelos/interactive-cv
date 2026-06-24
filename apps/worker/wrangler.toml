@@ -4,14 +4,13 @@ compatibility_date = "2026-06-24"
 compatibility_flags = ["nodejs_compat"]
 
 # KV namespace for GitHub API cache + rate limit counters.
-# TODO: crear el namespace en producción con:
+# Created 2026-06-24 via Cloudflare API. To recreate manually:
 #   wrangler kv:namespace create GITHUB_CACHE
-# y reemplazar el placeholder del namespace_id con el ID real.
-# En desarrollo local (wrangler dev --local) funciona sin ID real.
+# El preview_id se usa con wrangler dev --remote; en --local funciona sin él.
 [[kv_namespaces]]
 binding = "GITHUB_CACHE"
-id = "PLACEHOLDER_REPLACE_BEFORE_DEPLOY"
-preview_id = "PLACEHOLDER_REPLACE_BEFORE_DEPLOY"
+id = "ae8d04480d7445e0ab1507e6f9041abb"
+preview_id = "ae8d04480d7445e0ab1507e6f9041abb"
 
 # GITHUB_TOKEN se almacena como secret, nunca en este archivo:
 #   wrangler secret put GITHUB_TOKEN
