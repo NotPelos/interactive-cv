@@ -94,6 +94,16 @@ Monorepo simple con pnpm workspaces para el lado JS y Maven aparte para Java.
 - Java 21 LTS, Spring Boot 3.x, Maven 3.9
 - Wrangler 4.x para el Worker
 
+## Dependencias añadidas (justificadas)
+
+### Caffeine 3.1.8 (apps/api)
+Reemplaza el `ConcurrentHashMap` ilimitado en `RateLimitConfig` con una cache
+LRU acotada (`maximumSize=10 000`, `expireAfterAccess=10 min`). La razón es
+seguridad: un atacante con N IPs distintas podría llenar el heap de la JVM con
+la implementación anterior. Caffeine (Apache 2.0) es la librería de cache
+in-process estándar en el ecosistema Java/Spring. Documentado también en
+`SECURITY.md`.
+
 ## Performance budget
 
 - JS inicial < 50 KB (terminal solo).

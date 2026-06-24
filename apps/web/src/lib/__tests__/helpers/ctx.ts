@@ -4,7 +4,7 @@ import { getMinimalSeed } from "../../fs/seed.js";
 import { makeT } from "../../i18n/t.js";
 
 // Construye un Ctx de prueba con los overrides dados.
-// Defaults: cwd=home/notpelos, lang=es, minimal seed FS.
+// Defaults: cwd=home/notpelos, lang=es, minimal seed FS, endpoints vacíos (degraded mode).
 export function makeCtx(
   overrides: Partial<Omit<Ctx, "t">> & { lang?: Lang; fs?: Record<string, FsNode> } = {}
 ): Ctx {
@@ -17,5 +17,6 @@ export function makeCtx(
     skillsData: overrides.skillsData,
     lang,
     t: makeT(lang),
+    endpoints: overrides.endpoints ?? { api: "", worker: "" },
   };
 }

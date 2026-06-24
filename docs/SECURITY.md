@@ -86,6 +86,32 @@ Antes de merge a `main`:
 - [ ] A09 Logging Failures → logs estructurados, sin PII, retención clara.
 - [ ] A10 SSRF → backend no hace fetch externo con input del user.
 
+## TODOs de seguridad pendientes (follow-ups documentados)
+
+### IP extraction trust (X-Forwarded-For) — Follow-up Fase 8
+En producción Fly.io filtra los headers de proxy en su edge, por lo que
+`Fly-Client-IP` es de confianza. Sin embargo, un proxy mal configurado o una
+ruta alternativa podría dejar pasar un `X-Forwarded-For` spoofed.
+
+TODO: validar que `request.getRemoteAddr()` pertenece a un rango IP conocido de
+Fly.io antes de aceptar `X-Forwarded-For`. Por ahora, la caída de `Fly-Client-IP`
+al primer elemento de `X-Forwarded-For` es aceptable para el MVP.
+
+### PUBLIC_API_URL allowlist en build — Follow-up Fase 8
+El revisor propone validar en build-time que `PUBLIC_API_URL` apunta a un host
+de la allowlist (p. ej. `*.fly.dev`). Esto no se ha aplicado aún porque implica
+un cambio de arquitectura en el pipeline de build (Astro env vars).
+
+TODO: añadir validación en `astro.config.mjs` o en un script de pre-build que
+rechace valores de `PUBLIC_API_URL` que no coincidan con la allowlist de hosts
+permitidos.
+
+### Logs sin PII — Decisión sobre SHA-256 + salt
+El campo `ip_hash` (usando `String.hashCode()`) ha sido eliminado del log de
+rate-limit de `CvPdfController` porque `hashCode()` es trivialmente reversible
+para IPv4. Si en el futuro se necesita correlacionar incidentes por IP sin
+almacenar la IP en claro, añadir SHA-256 + salt rotante (nunca `hashCode()`).
+
 ## Respuesta a incidentes
 
 Si se filtra algo:

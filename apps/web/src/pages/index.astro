@@ -3,10 +3,20 @@ import { getCollection } from "astro:content";
 import Terminal from "../components/Terminal.tsx";
 import { buildFsFromContent, assertFsParity } from "../lib/fs/seed.js";
 import type { ContentEntry } from "../lib/fs/seed.js";
-import type { SkillsData } from "../lib/commands/types.js";
+import type { SkillsData, Endpoints } from "../lib/commands/types.js";
 import skillsRaw from "../content/skills/skills.json";
 import { skillsSchema } from "../content.config.ts";
 import "../styles/global.css";
+
+// Endpoints de servicios externos. Leídos desde variables de entorno en build time
+// y pasados al island Terminal como prop. Astro expone al cliente solo las vars PUBLIC_.
+// Si no están definidas, se usan strings vacíos y el Terminal entra en modo degradado:
+//   - download cv.pdf → abre PDF estático en /cv-static-{lang}.pdf
+//   - repos → informa de modo degradado, sin fetch
+const endpoints: Endpoints = {
+  api: import.meta.env.PUBLIC_API_URL ?? "",
+  worker: import.meta.env.PUBLIC_WORKER_URL ?? "",
+};
 
 // Build virtual FS from content collections at build/SSR time.
 const aboutEntries = await getCollection("about");
@@ -71,12 +81,14 @@ assertFsParity(initialFsByLang.es, initialFsByLang.en);
     </header>
 
     <!-- Terminal island (all interaction happens here) -->
+    <!-- endpoints: si alguna URL es vacía, los comandos download y repos usan fallback estático -->
     <main>
       <Terminal
         client:load
         initialFsByLang={initialFsByLang}
         skillsData={skillsData}
         defaultLang="es"
+        endpoints={endpoints}
       />
     </main>
 

@@ -6,10 +6,15 @@ import type { CommandResult } from "../../commands/types.js";
 const HOME = ["home", "notpelos"];
 const ctx = makeCtx({ cwd: HOME, prevCwd: ["home"] });
 
-// Narrowing helper: cd nunca devuelve setLang ni navigate,
+// Narrowing helper: cd nunca devuelve setLang, navigate, downloadPdf ni fetchRepos,
 // pero la discriminated union lo requiere para acceder a newCwd/newPrevCwd.
 function asCdResult(r: CommandResult) {
-  if (r.effect === "setLang" || r.effect === "navigate") {
+  if (
+    r.effect === "setLang" ||
+    r.effect === "navigate" ||
+    r.effect === "downloadPdf" ||
+    r.effect === "fetchRepos"
+  ) {
     throw new Error(`cd returned unexpected effect: ${r.effect}`);
   }
   return r;

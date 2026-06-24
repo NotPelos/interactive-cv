@@ -46,6 +46,12 @@ export interface Line {
 
 export type Lang = "es" | "en";
 
+// Endpoints for external services — empty strings mean degraded mode (use fallback)
+export interface Endpoints {
+  api: string;    // Spring Boot API base URL, e.g. https://xxx.fly.dev
+  worker: string; // Cloudflare Worker base URL, e.g. https://xxx.workers.dev
+}
+
 // Context passed to every command at runtime
 export interface Ctx {
   cwd: string[];                // current path segments (e.g. ["home","notpelos"])
@@ -55,13 +61,16 @@ export interface Ctx {
   skillsData?: SkillsData;      // parsed skills.json — optional so tests without it still compile
   lang: Lang;                   // active UI language
   t: (key: string, args?: Record<string, string>) => string; // i18n helper
+  endpoints: Endpoints;         // external service URLs (empty = degraded mode)
 }
 
 export type CommandResult =
   | { lines: Line[]; effect?: undefined; newCwd?: string[]; newPrevCwd?: string[] }
   | { lines: Line[]; effect: "clear"; newCwd?: string[]; newPrevCwd?: string[] }
   | { lines: Line[]; effect: "setLang"; lang: Lang }
-  | { lines: Line[]; effect: "navigate"; url: string };
+  | { lines: Line[]; effect: "navigate"; url: string }
+  | { lines: Line[]; effect: "downloadPdf"; url: string; fallbackUrl: string; filename: string }
+  | { lines: Line[]; effect: "fetchRepos"; url: string };
 
 export interface Command {
   name: string;

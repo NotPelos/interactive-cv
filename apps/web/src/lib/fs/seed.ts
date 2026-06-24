@@ -65,8 +65,35 @@ END:VCARD`;
 
 const minimalSecretsReadme = () => `[acceso restringido]`;
 
+// Mensaje placeholder visible antes de ejecutar `repos` por primera vez.
+const githubReposPlaceholder = () =>
+  "(no data yet — run 'repos' first)";
+
 function buildMinimalFs(lang: Lang): Record<string, FsNode> {
   return {
+    var: {
+      type: "directory",
+      name: "var",
+      children: {
+        log: {
+          type: "directory",
+          name: "log",
+          children: {
+            github: {
+              type: "directory",
+              name: "github",
+              children: {
+                "repos.json": {
+                  type: "file",
+                  name: "repos.json",
+                  content: githubReposPlaceholder,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     home: {
       type: "directory",
       name: "home",
@@ -177,13 +204,14 @@ function extractSlug(id: string, prefix: string): string {
 // in index.astro — never in the browser or in tests).
 // ---------------------------------------------------------------------------
 
+// Phone number deliberately omitted — reversible channels only (email + social).
+// Aligns with /cv recruiter view which doesn't expose phone either.
 function makeContactContent(): () => string {
   return () =>
     `BEGIN:VCARD
 VERSION:3.0
 FN:NotPelos
 EMAIL:ismaelprr10@gmail.com
-TEL:+34 696 320 615
 URL:https://github.com/NotPelos
 NOTE:linkedin.com/in/ismael-sanchez-aguilera-repullo
 END:VCARD`;
@@ -309,6 +337,29 @@ export function buildFsFromContent(
   };
 
   return {
+    var: {
+      type: "directory",
+      name: "var",
+      children: {
+        log: {
+          type: "directory",
+          name: "log",
+          children: {
+            github: {
+              type: "directory",
+              name: "github",
+              children: {
+                "repos.json": {
+                  type: "file",
+                  name: "repos.json",
+                  content: githubReposPlaceholder,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     home: {
       type: "directory",
       name: "home",

@@ -2,3 +2,21 @@ name = "notpelos-api"
 main = "src/index.ts"
 compatibility_date = "2026-06-24"
 compatibility_flags = ["nodejs_compat"]
+
+# KV namespace for GitHub API cache + rate limit counters.
+# TODO: crear el namespace en producción con:
+#   wrangler kv:namespace create GITHUB_CACHE
+# y reemplazar el placeholder del namespace_id con el ID real.
+# En desarrollo local (wrangler dev --local) funciona sin ID real.
+[[kv_namespaces]]
+binding = "GITHUB_CACHE"
+id = "PLACEHOLDER_REPLACE_BEFORE_DEPLOY"
+preview_id = "PLACEHOLDER_REPLACE_BEFORE_DEPLOY"
+
+# GITHUB_TOKEN se almacena como secret, nunca en este archivo:
+#   wrangler secret put GITHUB_TOKEN
+# Documentado en docs/DEPLOYMENT.md.
+
+[vars]
+# Override in wrangler dev for local testing against localhost:4321
+# ALLOWED_ORIGIN = "http://localhost:4321"

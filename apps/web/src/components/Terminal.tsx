@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 import { useReducer, useEffect, useRef, useCallback } from "preact/hooks";
-import type { Line, TokyoColor, SkillsData, Lang } from "../lib/commands/types.js";
+import type { Line, TokyoColor, SkillsData, Lang, Endpoints } from "../lib/commands/types.js";
 import { commandRegistry } from "../lib/commands/index.js";
 import { parseCommand } from "../lib/parser.js";
 import { seedFs } from "../lib/fs/seed.js";
@@ -8,6 +8,42 @@ import type { FsNode } from "../lib/fs/index.js";
 import { formatPath, resolvePath, getNode, HOME_SEGMENTS } from "../lib/fs/index.js";
 import { makeT } from "../lib/i18n/t.js";
 import { detectLang, LANG_STORAGE_KEY } from "../lib/i18n/detect.js";
+
+// ---------------------------------------------------------------------------
+// Validated repo shape from Worker response
+// ---------------------------------------------------------------------------
+
+interface RepoItem {
+  name: string;
+  description: string | null;
+  html_url: string;
+  language: string | null;
+  stargazers_count: number;
+  forks_count: number;
+  updated_at: string;
+  topics: string[];
+}
+
+function isRepoItem(v: unknown): v is RepoItem {
+  if (!v || typeof v !== "object") return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r["name"] === "string" &&
+    (r["description"] === null || typeof r["description"] === "string") &&
+    typeof r["html_url"] === "string" &&
+    (r["language"] === null || typeof r["language"] === "string") &&
+    typeof r["stargazers_count"] === "number" &&
+    typeof r["forks_count"] === "number" &&
+    typeof r["updated_at"] === "string" &&
+    Array.isArray(r["topics"])
+  );
+}
+
+function parseRepos(raw: unknown): RepoItem[] | null {
+  if (!Array.isArray(raw)) return null;
+  if (!raw.every(isRepoItem)) return null;
+  return raw as RepoItem[];
+}
 
 // ---------------------------------------------------------------------------
 // State & reducer
@@ -21,21 +57,30 @@ interface TerminalState {
   historyIndex: number;
   input: string;
   lang: Lang;
+  fs: Record<string, FsNode>;
   // Pending navigation URL set by the reducer; consumed by a useEffect.
   // Keeps the reducer pure (no setTimeout inside).
   pendingNavigation: string | null;
-  // fs is not stored in state — it's derived from fsByLang + lang at runtime
+  // Pending fetch — blocks input while a fetch is in progress.
+  pendingFetch: "pdf" | "repos" | null;
+  // Pending fetch payload consumed by useEffect — cleared after consumption.
+  pendingFetchPayload:
+    | { kind: "pdf"; url: string; fallbackUrl: string; filename: string }
+    | { kind: "repos"; url: string }
+    | null;
 }
 
 type Action =
   | { type: "SET_INPUT"; value: string }
-  | { type: "EXECUTE"; input: string; fsByLang: Record<Lang, Record<string, FsNode>>; skillsData?: SkillsData }
+  | { type: "EXECUTE"; input: string; fsByLang: Record<Lang, Record<string, FsNode>>; skillsData?: SkillsData; endpoints: Endpoints }
   | { type: "HISTORY_UP" }
   | { type: "HISTORY_DOWN" }
   | { type: "CLEAR" }
   | { type: "CTRL_C" }
   | { type: "APPEND_LINES"; lines: Line[] }
-  | { type: "SET_LANG"; lang: Lang };
+  | { type: "SET_LANG"; lang: Lang }
+  | { type: "FETCH_DONE" }
+  | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: () => string };
 
 const INITIAL_CWD = [...HOME_SEGMENTS];
 
@@ -61,9 +106,10 @@ const WELCOME_LINES: Line[] = [
 
 interface InitialProps {
   defaultLang: Lang;
+  initialFs: Record<string, FsNode>;
 }
 
-function makeInitialState({ defaultLang }: InitialProps): TerminalState {
+function makeInitialState({ defaultLang, initialFs }: InitialProps): TerminalState {
   return {
     output: WELCOME_LINES,
     cwd: INITIAL_CWD,
@@ -72,7 +118,10 @@ function makeInitialState({ defaultLang }: InitialProps): TerminalState {
     historyIndex: -1,
     input: "",
     lang: defaultLang,
+    fs: initialFs,
     pendingNavigation: null,
+    pendingFetch: null,
+    pendingFetchPayload: null,
   };
 }
 
@@ -90,6 +139,49 @@ function buildPromptLine(cwd: string[], userInput: string): Line {
   };
 }
 
+// Deep-clone only the path to the target directory in the FS tree (immutable update).
+function injectFsNode(
+  root: Record<string, FsNode>,
+  pathSegments: string[],
+  name: string,
+  content: () => string
+): Record<string, FsNode> {
+  // Clone the root one level at a time along the path.
+  function cloneDir(
+    children: Record<string, FsNode>,
+    remaining: string[]
+  ): Record<string, FsNode> {
+    if (remaining.length === 0) {
+      // Inject file here
+      return {
+        ...children,
+        [name]: { type: "file", name, content } as FsNode,
+      };
+    }
+    const seg = remaining[0]!;
+    const rest = remaining.slice(1);
+    // eslint-disable-next-line security/detect-object-injection
+    const existing = children[seg];
+    if (existing && existing.type === "directory") {
+      return {
+        ...children,
+        [seg]: { ...existing, children: cloneDir(existing.children, rest) },
+      };
+    }
+    // Directory doesn't exist — create it on-the-fly
+    return {
+      ...children,
+      [seg]: {
+        type: "directory",
+        name: seg,
+        children: cloneDir({}, rest),
+      } as FsNode,
+    };
+  }
+
+  return cloneDir(root, pathSegments);
+}
+
 function reducer(
   state: TerminalState,
   action: Action
@@ -100,6 +192,14 @@ function reducer(
 
     case "SET_LANG":
       return { ...state, lang: action.lang };
+
+    case "FETCH_DONE":
+      return { ...state, pendingFetch: null, pendingFetchPayload: null };
+
+    case "INJECT_FS_NODE": {
+      const newFs = injectFsNode(state.fs, action.path, action.name, action.content);
+      return { ...state, fs: newFs };
+    }
 
     case "HISTORY_UP": {
       if (state.history.length === 0) return state;
@@ -142,6 +242,8 @@ function reducer(
         output: [...state.output, promptLine, cancelLine],
         input: "",
         historyIndex: -1,
+        pendingFetch: null,
+        pendingFetchPayload: null,
       };
     }
 
@@ -154,7 +256,8 @@ function reducer(
     case "EXECUTE": {
       const raw = action.input.trim();
       const promptLine = buildPromptLine(state.cwd, raw);
-      const activeFs = action.fsByLang[state.lang];
+      // Use the mutable fs from state (may have injected nodes from fetchRepos)
+      const activeFs = state.fs;
 
       if (raw === "") {
         return {
@@ -223,6 +326,7 @@ function reducer(
         skillsData: action.skillsData,
         lang: state.lang,
         t: tFn,
+        endpoints: action.endpoints,
       };
 
       const result = command.run(args, ctx);
@@ -241,8 +345,6 @@ function reducer(
       }
 
       if (result.effect === "navigate") {
-        // Store the URL as pending so a useEffect can launch the navigation.
-        // Keeps the reducer pure — no setTimeout / side-effects here.
         const { url } = result;
         return {
           ...state,
@@ -263,6 +365,40 @@ function reducer(
           input: "",
           historyIndex: -1,
           pendingNavigation: null,
+        };
+      }
+
+      if (result.effect === "downloadPdf") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
+          pendingFetch: "pdf",
+          pendingFetchPayload: {
+            kind: "pdf",
+            url: result.url,
+            fallbackUrl: result.fallbackUrl,
+            filename: result.filename,
+          },
+        };
+      }
+
+      if (result.effect === "fetchRepos") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
+          pendingFetch: "repos",
+          pendingFetchPayload: {
+            kind: "repos",
+            url: result.url,
+          },
         };
       }
 
@@ -351,6 +487,25 @@ function segmentClass(color: TokyoColor | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers for async effects
+// ---------------------------------------------------------------------------
+
+// Trigger a file download from a Blob without innerHTML.
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  // Cleanup after browser has queued the download
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
+}
+
+// ---------------------------------------------------------------------------
 // Main Terminal component
 // ---------------------------------------------------------------------------
 
@@ -358,6 +513,8 @@ interface TerminalProps {
   initialFsByLang?: Record<Lang, Record<string, FsNode>>;
   skillsData?: SkillsData;
   defaultLang?: Lang;
+  // External service endpoints. Empty strings = degraded mode (use fallbacks).
+  endpoints?: Endpoints;
 }
 
 // Module-scoped fallback — avoids recreating the object on every render
@@ -366,16 +523,23 @@ const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
   en: seedFs,
 };
 
+const FALLBACK_ENDPOINTS: Endpoints = { api: "", worker: "" };
+
 export default function Terminal({
   initialFsByLang,
   skillsData,
   defaultLang = "es",
+  endpoints = FALLBACK_ENDPOINTS,
 }: TerminalProps = {}) {
   const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
 
+  // Use the lang-specific FS as initial state so that fs in state stays mutable
+  // (INJECT_FS_NODE will clone and update it without touching fsByLang).
   const [state, dispatch] = useReducer(
     reducer,
-    { defaultLang },
+    // defaultLang is typed as Lang ("es"|"en"), not user-controlled input
+    // eslint-disable-next-line security/detect-object-injection
+    { defaultLang, initialFs: fsByLang[defaultLang] },
     makeInitialState
   );
 
@@ -386,8 +550,7 @@ export default function Terminal({
 
   const isInitialMount = useRef(true);
 
-  // Combina detección inicial y persistencia: en mount solo detecta sin escribir a
-  // localStorage si no hay mismatch real. Escritura solo ocurre en cambios deliberados.
+  // Combina detección inicial y persistencia.
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -396,7 +559,6 @@ export default function Terminal({
       document.documentElement.lang = detected;
       return;
     }
-    // Runs on deliberate lang changes (comando `lang`)
     localStorage.setItem(LANG_STORAGE_KEY, state.lang);
     document.documentElement.lang = state.lang;
   }, [state.lang]); // defaultLang is stable — no need in deps
@@ -412,7 +574,6 @@ export default function Terminal({
   }, [state.output]);
 
   // Consumes pendingNavigation — keeps the reducer pure.
-  // Guard rejects anything that isn't a same-origin relative path (Fix 6).
   useEffect(() => {
     const url = state.pendingNavigation;
     if (!url) return;
@@ -425,13 +586,192 @@ export default function Terminal({
     return () => clearTimeout(timer);
   }, [state.pendingNavigation]);
 
+  // Handles downloadPdf effect — fetch from API, fall back to static PDF.
+  useEffect(() => {
+    const payload = state.pendingFetchPayload;
+    if (!payload || payload.kind !== "pdf") return;
+
+    const { url, fallbackUrl, filename } = payload;
+
+    const controller = new AbortController();
+    // Wire AbortController to a 5s timeout. The controller's signal is passed to
+    // fetch() so cleanup() actually cancels the in-flight request on unmount.
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    async function run(): Promise<void> {
+      // Degraded mode: URL missing or not parseable — go straight to fallback.
+      // URL.canParse is the standards-compliant way to validate a URL; the old
+      // !url.startsWith("http") heuristic was fragile (e.g. https vs http).
+      if (!url || !URL.canParse(url)) {
+        dispatch({
+          type: "APPEND_LINES",
+          lines: [
+            {
+              kind: "plain",
+              segments: [
+                { text: "→ API not configured — opening static PDF…", color: "tn-yellow" },
+              ],
+            },
+          ],
+        });
+        window.open(fallbackUrl, "_blank");
+        dispatch({ type: "FETCH_DONE" });
+        return;
+      }
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (
+          response.ok &&
+          response.headers.get("Content-Type")?.includes("application/pdf")
+        ) {
+          const blob = await response.blob();
+          triggerDownload(blob, filename);
+        } else {
+          throw new Error("non-pdf response");
+        }
+      } catch {
+        dispatch({
+          type: "APPEND_LINES",
+          lines: [
+            {
+              kind: "plain",
+              segments: [
+                {
+                  text:
+                    state.lang === "en"
+                      ? "→ API not responding, falling back to static PDF…"
+                      : "→ API sin respuesta, usando PDF estático…",
+                  color: "tn-yellow",
+                },
+              ],
+            },
+          ],
+        });
+        window.open(fallbackUrl, "_blank");
+      } finally {
+        clearTimeout(timeoutId);
+        dispatch({ type: "FETCH_DONE" });
+      }
+    }
+
+    void run();
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [state.pendingFetchPayload]); // state.lang captured via closure at effect run time — intentional
+
+  // Handles fetchRepos effect — fetch from Worker, format and inject into FS.
+  useEffect(() => {
+    const payload = state.pendingFetchPayload;
+    if (!payload || payload.kind !== "repos") return;
+
+    const { url } = payload;
+    const lang = state.lang;
+
+    const controller = new AbortController();
+    // Wire AbortController to a 5s timeout so cleanup() cancels the in-flight
+    // request on unmount and does not dispatch to a dead component.
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    async function run(): Promise<void> {
+      // Degraded mode: URL missing or not parseable — report and bail out.
+      // URL.canParse is the standards-compliant validator; replaces the fragile
+      // !url.startsWith("http") heuristic.
+      if (!url || !URL.canParse(url)) {
+        dispatch({
+          type: "APPEND_LINES",
+          lines: [
+            {
+              kind: "plain",
+              segments: [
+                {
+                  text:
+                    lang === "en"
+                      ? "repos: worker unreachable (degraded mode)"
+                      : "repos: worker no disponible (modo degradado)",
+                  color: "tn-red",
+                },
+              ],
+            },
+          ],
+        });
+        dispatch({ type: "FETCH_DONE" });
+        return;
+      }
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const raw: unknown = await response.json();
+        const repos = parseRepos(raw);
+
+        if (!repos) throw new Error("unexpected shape");
+
+        const repoLines: Line[] = repos.map((repo) => ({
+          kind: "plain" as const,
+          segments: [
+            { text: repo.name, color: "tn-blue" as const },
+            { text: " ★" + String(repo.stargazers_count), color: "tn-yellow" as const },
+            { text: " · ", color: "tn-text-dim" as const },
+            { text: repo.language ?? "—", color: "tn-cyan" as const },
+            { text: " · ", color: "tn-text-dim" as const },
+            { text: repo.description ?? "", color: "tn-text" as const },
+          ],
+        }));
+
+        dispatch({ type: "APPEND_LINES", lines: repoLines });
+
+        // Inject fetched data into /var/log/github/repos.json
+        const jsonContent = JSON.stringify(repos, null, 2);
+        dispatch({
+          type: "INJECT_FS_NODE",
+          path: ["var", "log", "github"],
+          name: "repos.json",
+          content: () => jsonContent,
+        });
+      } catch {
+        dispatch({
+          type: "APPEND_LINES",
+          lines: [
+            {
+              kind: "plain",
+              segments: [
+                {
+                  text:
+                    lang === "en"
+                      ? "repos: worker unreachable (degraded mode)"
+                      : "repos: worker no disponible (modo degradado)",
+                  color: "tn-red",
+                },
+              ],
+            },
+          ],
+        });
+      } finally {
+        clearTimeout(timeoutId);
+        dispatch({ type: "FETCH_DONE" });
+      }
+    }
+
+    void run();
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [state.pendingFetchPayload]); // lang captured via closure — intentional
+
   const isNavigating = state.pendingNavigation !== null;
+  const isFetching = state.pendingFetch !== null;
+  const isBlocked = isNavigating || isFetching;
 
   const handleContainerClick = useCallback(() => {
     inputRef.current?.focus();
   }, []);
 
-  const activeFs = fsByLang[state.lang];
+  const activeFs = state.fs;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -485,12 +825,12 @@ export default function Terminal({
       }
 
       if (e.key === "Enter") {
-        if (isNavigating) return;
-        dispatch({ type: "EXECUTE", input: state.input, fsByLang, skillsData });
+        if (isBlocked) return;
+        dispatch({ type: "EXECUTE", input: state.input, fsByLang, skillsData, endpoints });
         return;
       }
     },
-    [state.input, state.cwd, activeFs, fsByLang, skillsData, isNavigating]
+    [state.input, state.cwd, activeFs, fsByLang, skillsData, isBlocked, endpoints]
   );
 
   const handleInputChange = useCallback((e: Event) => {
@@ -529,14 +869,14 @@ export default function Terminal({
         <span class="text-tn-text animate-blink">{"█"}</span>
       </div>
 
-      {/* Hidden input — real keyboard target, invisible. Disabled during navigation. */}
+      {/* Hidden input — real keyboard target, invisible. Disabled during navigation or fetch. */}
       <input
         ref={inputRef}
         type="text"
         value={state.input}
         onInput={handleInputChange}
         onKeyDown={handleKeyDown}
-        disabled={isNavigating}
+        disabled={isBlocked}
         class="absolute opacity-0 pointer-events-none w-px h-px"
         aria-label="Terminal input"
         autocomplete="off"

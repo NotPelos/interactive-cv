@@ -14,6 +14,8 @@ import find from "./find.js";
 import neofetch from "./neofetch.js";
 import recruiter from "./recruiter.js";
 import lang from "./lang.js";
+import download from "./download.js";
+import repos from "./repos.js";
 
 export const commandRegistry: Map<string, Command> = new Map([
   ["help", help],
@@ -31,6 +33,8 @@ export const commandRegistry: Map<string, Command> = new Map([
   ["neofetch", neofetch],
   ["recruiter", recruiter],
   ["lang", lang],
+  ["download", download],
+  ["repos", repos],
 ]);
 
 // Inject the full registry into help and man so they can list/look up all commands.
