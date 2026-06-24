@@ -14,7 +14,9 @@
     "onlyBuiltDependencies": ["esbuild", "sharp"],
     "overrides": {
       "undici": ">=6.27.0",
-      "ws": ">=8.21.0"
+      "ws": ">=8.21.0",
+      "devalue": ">=5.3.2",
+      "vite": ">=6.4.3"
     }
   },
   "scripts": {

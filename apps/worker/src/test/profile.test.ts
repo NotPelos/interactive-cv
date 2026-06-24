@@ -100,8 +100,11 @@ describe("Profile handler", () => {
     const first = await handleProfile(new Request("http://worker/"), env);
     expect(first.cacheHit).toBe(false);
 
-    // Second call should hit cache (no more fetch calls needed)
+    // Second call should hit cache (no more fetch calls needed).
+    // mockClear resets the call count on the existing spy without removing it,
+    // so we can assert that the second handleProfile call does not invoke fetch.
     const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy.mockClear();
     const second = await handleProfile(new Request("http://worker/"), env);
     expect(second.cacheHit).toBe(true);
     expect(fetchSpy).not.toHaveBeenCalled();

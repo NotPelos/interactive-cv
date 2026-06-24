@@ -31,15 +31,16 @@ export function createMockKv(): KVNamespace {
     async list(): Promise<KVNamespaceListResult<unknown, string>> {
       return { keys: [], list_complete: true, cacheStatus: null };
     },
-    async getWithMetadata<V = string, M = unknown>(
-      key: string
-    ): Promise<KVNamespaceGetWithMetadataResult<V, M>> {
+    async getWithMetadata<M = unknown>(
+      key: string,
+      _type?: string
+    ): Promise<KVNamespaceGetWithMetadataResult<string, M>> {
       const entry = store.get(key);
       if (!entry) {
         return { value: null, metadata: null, cacheStatus: null };
       }
       return {
-        value: entry.value as V,
+        value: entry.value,
         metadata: entry.metadata as M | null,
         cacheStatus: null,
       };

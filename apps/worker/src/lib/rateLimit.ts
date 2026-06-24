@@ -21,8 +21,6 @@
  *   `rateLimiting` binding for strict per-IP atomicity.
  */
 
-import type { Env } from "./cors.js";
-
 const RATE_LIMIT = 30; // requests per minute per IP
 const WINDOW_MS = 60_000; // 60 seconds in milliseconds
 
@@ -66,7 +64,7 @@ export async function checkRateLimit(
   const ip = getClientIp(request);
   const key = rateLimitKey(ip);
 
-  const { value, metadata } = await kv.getWithMetadata<string, RateLimitMeta>(key);
+  const { value, metadata } = await kv.getWithMetadata<RateLimitMeta>(key, "text");
   const current = value !== null ? parseInt(value, 10) : 0;
 
   if (current >= RATE_LIMIT) {
