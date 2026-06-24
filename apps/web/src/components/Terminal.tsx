@@ -985,8 +985,8 @@ export default function Terminal({
       {/* Matrix rain overlay */}
       {state.matrixActive && <MatrixRain />}
 
-      {/* Output history */}
-      <div class="pb-2">
+      {/* Output history — role="log" + aria-live para lectores de pantalla */}
+      <div class="pb-2" role="log" aria-live="polite" aria-atomic="false">
         {state.output.map((line, i) => (
           <div key={i} class="leading-relaxed whitespace-pre-wrap break-words">
             {line.segments.map((seg, j) => (

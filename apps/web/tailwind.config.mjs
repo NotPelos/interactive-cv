@@ -9,7 +9,7 @@ export default {
         "tn-border":    "#414868",
         "tn-text":      "#c0caf5",
         "tn-text-mute": "#a9b1d6",
-        "tn-text-dim":  "#565f89",
+        "tn-text-dim":  "#7a839e",
         "tn-blue":      "#7aa2f7",
         "tn-green":     "#9ece6a",
         "tn-red":       "#f7768e",

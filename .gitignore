@@ -48,3 +48,8 @@ coverage/
 # --- Misc ---
 *.tsbuildinfo
 .turbo/
+
+# --- Playwright ---
+playwright-report/
+test-results/
+playwright/.cache/

@@ -7,5 +7,12 @@
     },
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "playwright-report",
+    "test-results",
+    ".astro"
+  ]
 }
