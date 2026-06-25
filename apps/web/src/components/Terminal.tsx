@@ -555,15 +555,26 @@ function createAudioContext(): AudioContext | null {
 }
 
 function playTypeClick(audioCtx: AudioContext): void {
+  // Some browsers create the context in 'suspended' state even when invoked
+  // inside a user gesture. resume() is idempotent so it's safe to call always.
+  if (audioCtx.state === "suspended") {
+    void audioCtx.resume();
+  }
+  const now = audioCtx.currentTime;
   const o = audioCtx.createOscillator();
   const g = audioCtx.createGain();
   o.connect(g);
   g.connect(audioCtx.destination);
-  o.type = "square";
-  o.frequency.value = 800 + Math.random() * 200;
-  g.gain.value = 0.02;
-  o.start();
-  o.stop(audioCtx.currentTime + 0.015);
+  // Triangle is softer than square; pitch jitter avoids robotic repetition.
+  o.type = "triangle";
+  o.frequency.setValueAtTime(1200 + Math.random() * 400, now);
+  // Envelope: 2ms attack, ~50ms exponential decay → real "tick" not a pop.
+  // Peak gain 0.15 ≈ -16dB: clearly audible without being intrusive.
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(0.15, now + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+  o.start(now);
+  o.stop(now + 0.06);
 }
 
 // ---------------------------------------------------------------------------
