@@ -11,6 +11,8 @@ const SOUND_STORAGE_KEY = "notpelos.sound";
 test.describe("Terminal — comando sound", () => {
   test("sound on activa el sonido y lo persiste en localStorage", async ({ page }) => {
     await gotoTerminal(page);
+    // Force ES so the test doesn't depend on locale detection race in CI.
+    await runCommand(page, "lang es");
     await runCommand(page, "sound on");
 
     await waitForOutput(page, "activado");
@@ -31,6 +33,8 @@ test.describe("Terminal — comando sound", () => {
 
   test("sound off desactiva el sonido y lo persiste", async ({ page }) => {
     await gotoTerminal(page);
+    // Force ES so the test doesn't depend on locale detection race in CI.
+    await runCommand(page, "lang es");
     await runCommand(page, "sound on");
     await waitForOutput(page, "activado");
 
@@ -51,6 +55,7 @@ test.describe("Terminal — comando sound", () => {
 
   test("sound sin args muestra el estado actual", async ({ page }) => {
     await gotoTerminal(page);
+    await runCommand(page, "lang es");
     await runCommand(page, "sound");
 
     // Sin args muestra estado actual (por defecto off)
@@ -59,6 +64,8 @@ test.describe("Terminal — comando sound", () => {
 
   test("el estado de sound persiste tras recargar la página", async ({ page }) => {
     await gotoTerminal(page);
+    // Force ES so the test doesn't depend on locale detection race in CI.
+    await runCommand(page, "lang es");
     await runCommand(page, "sound on");
     await waitForOutput(page, "activado");
 
@@ -75,6 +82,7 @@ test.describe("Terminal — comando sound", () => {
 
   test("sound con argumento inválido muestra error", async ({ page }) => {
     await gotoTerminal(page);
+    await runCommand(page, "lang es");
     await runCommand(page, "sound maybe");
 
     await waitForOutput(page, "inválida");
