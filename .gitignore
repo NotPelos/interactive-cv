@@ -53,3 +53,6 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
+
+# --- Materiales personales (no públicos) ---
+personal/
