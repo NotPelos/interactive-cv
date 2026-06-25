@@ -12,6 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout cv-content (private repo con datos personales)
+        uses: actions/checkout@v4
+        with:
+          repository: NotPelos/cv-content
+          token: ${{ secrets.CV_CONTENT_PAT }}
+          path: personal
+
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
@@ -23,6 +30,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Sync contenido personal a apps/web
+        run: pnpm --filter web sync
 
       - name: Build web app
         run: pnpm --filter web build

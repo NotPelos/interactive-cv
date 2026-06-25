@@ -52,6 +52,11 @@ jobs:
       - name: Instalar dependencias (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Sync contenido personal a apps/web
+        # Copia personal/content → src/content, regenera profile.ts, avatares y OG.
+        # Necesario ANTES de typecheck porque src/profile.ts es gitignored.
+        run: pnpm --filter web sync
+
       - name: Typecheck (astro check)
         run: pnpm --filter web typecheck
 
