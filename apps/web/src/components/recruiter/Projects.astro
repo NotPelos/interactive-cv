@@ -9,9 +9,10 @@ const { lang } = Astro.props;
 
 const allProjects = await getCollection("projects");
 
-// Top 3 by order (1 = most sellable): AuthServiceGame, NosRaids, Discord-Bot
+// Top 4 by order (1 = most sellable): AuthServiceGame, NosRaids, RustEagle,
+// dle Dragon Ball. Layout 2×2 da más respiración por card que un 3+1 col.
 const projects = allProjects
-  .filter((p) => p.data.lang === lang && p.data.order <= 3)
+  .filter((p) => p.data.lang === lang && p.data.order <= 4)
   .sort((a, b) => a.data.order - b.data.order);
 
 // Warn at build time if a project exposes neither repo nor liveUrl.
@@ -32,7 +33,7 @@ for (const p of projects) {
     {lang === "es" ? "Proyectos" : "Projects"}
   </h2>
 
-  <ul class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     {projects.map((p) => (
       <li class="border border-tn-border rounded-md p-4 flex flex-col gap-2">
         <div>
