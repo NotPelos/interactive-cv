@@ -12,7 +12,7 @@ order: 1
 
 After the previous contract ended, same client (Accenture), same domain — moving from L3 support to building new features.
 
-- Building REST API features on top of the client's Spring Boot platform.
-- Code quality enforced with SonarQube as gate; deployments via Jenkins.
+- **Refactored and migrated legacy EJB-based services to REST APIs on Spring Boot** — modernises the inherited stack without breaking existing consumers.
+- Building new features on the client's REST platform.
+- Code quality enforced with SonarQube as a gate; deployments via Jenkins.
 - 14-person team, code reviews on every merge to the main branch.
-- *[Ismael: add a concrete win when you have one]*

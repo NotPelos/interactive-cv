@@ -9,4 +9,4 @@ Started Computer Engineering at Jaén, jumped off in time, and finished with a v
 
 I enjoy deep debugging, refactoring legacy code without breaking it, and architectures you can explain over one coffee. Strong English (a 3-month exchange in the Netherlands and the Shell Eco Marathon in Rotterdam helped). Remote-first.
 
-AI-assisted workflow (vibe coding) for architecture, code and review — not to replace judgement, but to iterate on it faster. This CV is the example: the repo is open, commits document the process, and the subagents that orchestrated the work live in `.claude/agents/` if you want to audit them.
+I've been learning to **handle AI with intent** — not just use it, direct it. That opened the door to **vibe coding** in personal projects: stepping out of my Java/Spring comfort zone and building things that used to block me — unfamiliar languages, missing resources. This CV is exactly that case — TypeScript, Astro and Cloudflare weren't in my daily stack, and here they are. At the client work I barely use AI; it's a lever for my personal time, not a shortcut for the day job.

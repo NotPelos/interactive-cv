@@ -9,4 +9,4 @@ Empecé Ingeniería Informática en Jaén, me bajé del tren a tiempo y rematé 
 
 Disfruto el debug fino, refactorizar legacy sin romper nada, y arquitecturas que se explican con un café. Inglés profesional (un intercambio en Holanda y la Shell Eco Marathon en Rotterdam ayudaron). Remoto preferentemente.
 
-Trabajo asistido por IA (vibe coding) sobre arquitectura, código y revisión, no para sustituir el criterio sino para iterar más rápido sobre él. Este CV es el ejemplo: el repo está abierto, los commits documentan el proceso, y los subagentes que orquestaron el trabajo viven en `.claude/agents/` por si quieres auditarlos.
+Llevo tiempo aprendiendo a **manejar IA con propósito** — no usarla, dirigirla. Eso me ha abierto la puerta al **vibe coding** en proyectos personales: salir de la zona cómoda de Java/Spring y construir cosas que antes me bloqueaban por lenguaje desconocido o falta de recursos. Este CV es el caso — TypeScript, Astro y Cloudflare no estaban en mi stack diario, y aquí están. En el trabajo del cliente apenas uso IA; es una palanca para mi tiempo personal, no un atajo profesional.

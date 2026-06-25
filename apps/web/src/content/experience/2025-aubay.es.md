@@ -12,7 +12,7 @@ order: 1
 
 Tras el cierre del contrato anterior, mismo cliente (Accenture) y mismo dominio — paso de soporte de nivel 3 a construir features nuevas.
 
-- Desarrollo de funcionalidades en APIs REST sobre Spring Boot.
+- **Refactor y migración de servicios legacy basados en EJBs a APIs REST sobre Spring Boot** — moderniza la pila heredada sin romper a los consumidores existentes.
+- Desarrollo de nuevas funcionalidades sobre la plataforma REST del cliente.
 - Calidad de código con SonarQube como gate; despliegues vía Jenkins.
 - Equipo de 14 personas, code reviews en cada merge a la rama principal.
-- *[Ismael: añadir un logro concreto cuando lo tengas]*
