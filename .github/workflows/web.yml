@@ -1,13 +1,13 @@
 name: Web — CI
 
 on:
+  # Sin path filter en push a main: el contenido vive en el repo privado
+  # cv-content y los "deploy commits" en este repo público son a menudo
+  # empty commits que no tocan apps/web. Cualquier push a main dispara CI
+  # + deploy. PR sigue con path filter para no quemar minutos en
+  # cambios que no afectan al web.
   push:
     branches: [main]
-    paths:
-      - "apps/web/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
-      - ".github/workflows/web.yml"
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +15,7 @@ on:
       - "pnpm-lock.yaml"
       - "package.json"
       - ".github/workflows/web.yml"
+  workflow_dispatch:
 
 # Cancela runs anteriores del mismo PR para no quemar minutos
 concurrency:
