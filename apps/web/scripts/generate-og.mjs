@@ -5,10 +5,14 @@
  *   node apps/web/scripts/generate-og.mjs
  *   pnpm --filter web og:generate
  *
+ * Personalización via variables de entorno (sync-content.mjs las inyecta):
+ *   OG_FULL_NAME     — nombre completo del owner (default: "Your Name")
+ *   OG_PROMPT_USER   — "user@host" del prompt (default: "user@cv")
+ *   OG_DOMAIN        — dominio (default: "youralias.pages.dev")
+ *   OG_GITHUB_USER   — usuario de GitHub (default: "youralias")
+ *
  * Dependencia: sharp (devDependency de apps/web). Usa librsvg bundleado
  * en sharp para renderizar el SVG con texto — sin deps externas adicionales.
- *
- * Si el diseño necesita cambios, edita el SVG inline aquí y vuelve a ejecutar.
  */
 
 import sharp from "sharp";
@@ -23,6 +27,13 @@ const FAVICON_FILE = join(OUTPUT_DIR, "favicon.svg");
 
 const W = 1200;
 const H = 630;
+
+// Datos del owner — leídos de variables de entorno para que el script sea agnóstico.
+// sync-content.mjs las inyecta antes de llamar a este script.
+const OG_FULL_NAME   = process.env["OG_FULL_NAME"]   ?? "Your Name";
+const OG_PROMPT_USER = process.env["OG_PROMPT_USER"] ?? "user@cv";
+const OG_DOMAIN      = process.env["OG_DOMAIN"]      ?? "youralias.pages.dev";
+const OG_GITHUB_USER = process.env["OG_GITHUB_USER"] ?? "youralias";
 
 // Paleta Tokyo Night
 const COLORS = {
@@ -47,6 +58,27 @@ function escapeXml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/**
+ * Genera el bloque SVG del prompt de terminal con posiciones dinámicas.
+ * Permite que OG_PROMPT_USER tenga cualquier longitud.
+ * Monospace a 22px: ~13.2 px/char (bold ~13.5, estimamos uniforme).
+ */
+function renderPromptHeader(startX, y) {
+  const charW = 13.2;
+  const promptText = OG_PROMPT_USER;
+  const promptW = Math.ceil(promptText.length * charW);
+  const colonX = startX + promptW;
+  const tildeX = colonX + charW;
+  const dollarX = tildeX + charW;
+  const cmdX = dollarX + charW * 2; // "$ " son 2 chars
+
+  return /* xml */ `<text x="${startX}" y="${y}" font-family="monospace" font-size="22" fill="${COLORS.blue}" font-weight="700">${escapeXml(promptText)}</text>
+  <text x="${colonX}" y="${y}" font-family="monospace" font-size="22" fill="${COLORS.muted}">:</text>
+  <text x="${tildeX}" y="${y}" font-family="monospace" font-size="22" fill="${COLORS.magenta}" font-weight="700">~</text>
+  <text x="${dollarX}" y="${y}" font-family="monospace" font-size="22" fill="${COLORS.muted}">$ </text>
+  <text x="${cmdX}" y="${y}" font-family="monospace" font-size="22" fill="${COLORS.green}">cat about.md</text>`;
 }
 
 // SVG de la OG image (1200×630)
@@ -109,45 +141,10 @@ const ogSvg = /* xml */ `<svg
     font-size="14"
     fill="${COLORS.muted}"
     letter-spacing="0.5"
-  >notpelos.pages.dev — cv</text>
+  >${escapeXml(OG_DOMAIN)} — cv</text>
 
-  <!-- Prompt header: notpelos@cv:~$ -->
-  <text
-    x="96" y="210"
-    font-family="monospace"
-    font-size="22"
-    fill="${COLORS.blue}"
-    font-weight="700"
-  >notpelos@cv</text>
-
-  <text
-    x="324" y="210"
-    font-family="monospace"
-    font-size="22"
-    fill="${COLORS.muted}"
-  >:</text>
-
-  <text
-    x="338" y="210"
-    font-family="monospace"
-    font-size="22"
-    fill="${COLORS.magenta}"
-    font-weight="700"
-  >~</text>
-
-  <text
-    x="358" y="210"
-    font-family="monospace"
-    font-size="22"
-    fill="${COLORS.muted}"
-  >$ </text>
-
-  <text
-    x="390" y="210"
-    font-family="monospace"
-    font-size="22"
-    fill="${COLORS.green}"
-  >cat about.md</text>
+  <!-- Prompt header: user@cv:~$ cat about.md -->
+  ${renderPromptHeader(96, 210)}
 
   <!-- Nombre grande -->
   <text
@@ -157,7 +154,7 @@ const ogSvg = /* xml */ `<svg
     font-weight="500"
     fill="${COLORS.text}"
     letter-spacing="-0.5"
-  >Ismael Sánchez Aguilera Repullo</text>
+  >${escapeXml(OG_FULL_NAME)}</text>
 
   <!-- Título / Stack -->
   <text
@@ -187,7 +184,7 @@ const ogSvg = /* xml */ `<svg
     font-family="monospace"
     font-size="16"
     fill="${COLORS.muted}"
-  >github.com/NotPelos</text>
+  >github.com/${escapeXml(OG_GITHUB_USER)}</text>
 
   <!-- Cursor parpadeante (estático en PNG) -->
   <rect

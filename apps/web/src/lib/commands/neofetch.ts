@@ -97,11 +97,15 @@ const neofetch: Command = {
 
     const uptime = calcUptime(ctx.lang);
 
+    const neofetchHeader = ctx.promptUser ?? "user@cv";
+    const neofetchHost = ctx.neofetchHost ?? "unknown";
+    const separatorLine = "─".repeat(neofetchHeader.length);
+
     const stats: Array<{ label: string; value: string }> = [
-      { label: "notpelos@curriculum", value: "" },
-      { label: "─────────────────────", value: "" },
+      { label: neofetchHeader, value: "" },
+      { label: separatorLine, value: "" },
       { label: "OS", value: "BackendDev Linux 5.x" },
-      { label: "Host", value: "Sevilla, ES" },
+      { label: "Host", value: neofetchHost },
       { label: "Kernel", value: "Java 21" },
       { label: "Uptime", value: uptime },
       { label: "Shell", value: "Spring Boot 3" },
@@ -123,7 +127,7 @@ const neofetch: Command = {
       const segs: Segment[] = [{ text: artLine, color: "tn-red" }];
 
       if (stat) {
-        if (stat.label === "notpelos@curriculum") {
+        if (stat.label === neofetchHeader) {
           segs.push({ text: "  " + stat.label, color: "tn-blue" });
         } else if (stat.label.startsWith("─")) {
           segs.push({ text: "  " + stat.label, color: "tn-border" });

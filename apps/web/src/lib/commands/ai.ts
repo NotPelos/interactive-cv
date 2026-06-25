@@ -1,5 +1,6 @@
-import type { Command } from "./types.js";
+import type { Command, Ctx } from "./types.js";
 import { aiScript, aiFallback } from "../ai/script.js";
+import type { AiEntry } from "../ai/script.js";
 import type { Lang } from "./types.js";
 
 // Normalise input: lowercase, trim, strip diacritics.
@@ -12,8 +13,48 @@ function normalise(s: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
-function matchScript(query: string, lang: Lang): string {
+// Builds dynamic entries whose text depends on profile social links.
+// These override the static entries in aiScript with runtime URLs.
+function buildDynamicEntries(ctx?: Partial<Ctx>): AiEntry[] {
+  const linkedinUrl = ctx?.social?.linkedinUrl ?? "";
+  const githubUser = ctx?.social?.githubUser ?? "youralias";
+
+  // Strip https://www. from LinkedIn for display
+  const linkedinDisplay = linkedinUrl.replace("https://www.", "").replace("https://", "");
+
+  return [
+    {
+      triggers: ["linkedin"],
+      es: `${linkedinDisplay} — pero el CV real es éste.`,
+      en: `${linkedinDisplay} — but the real CV is right here.`,
+    },
+    {
+      triggers: ["github", "repos", "proyectos"],
+      es: `github.com/${githubUser} — \`ls /var/log/github/\` lo ves en vivo.`,
+      en: `github.com/${githubUser} — \`ls /var/log/github/\` to see it live.`,
+    },
+    {
+      triggers: ["contact", "contacto", "email"],
+      es: `\`cat ~/contact.vcf\` — o escríbeme directamente desde LinkedIn.`,
+      en: `\`cat ~/contact.vcf\` — or ping me on LinkedIn directly.`,
+    },
+  ];
+}
+
+function matchScript(query: string, lang: Lang, ctx?: Partial<Ctx>): string {
   const q = normalise(query);
+
+  // Dynamic entries (social-link-aware) checked before static ones
+  const dynamicEntries = buildDynamicEntries(ctx);
+  for (const entry of dynamicEntries) {
+    for (const trigger of entry.triggers) {
+      if (q.includes(normalise(trigger))) {
+        // lang is typed as Lang ("es"|"en"), not user-controlled input
+        // eslint-disable-next-line security/detect-object-injection
+        return entry[lang];
+      }
+    }
+  }
 
   for (const entry of aiScript) {
     for (const trigger of entry.triggers) {
@@ -62,7 +103,7 @@ const ai: Command = {
     }
 
     const query = args.join(" ");
-    const response = matchScript(query, ctx.lang);
+    const response = matchScript(query, ctx.lang, ctx as Partial<Ctx>);
 
     return {
       lines: [
@@ -78,5 +119,5 @@ const ai: Command = {
   },
 };
 
-export { matchScript };
+export { matchScript, buildDynamicEntries };
 export default ai;

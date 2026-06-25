@@ -58,9 +58,9 @@ const minimalEducationEn =
 const minimalContact =
   `BEGIN:VCARD
 VERSION:3.0
-FN:NotPelos
-EMAIL:ismaelprr10@gmail.com
-URL:https://github.com/NotPelos
+FN:youralias
+EMAIL:you@example.com
+URL:https://github.com/youralias
 END:VCARD`;
 
 const minimalSecretsReadme = `[acceso restringido]`;
@@ -205,14 +205,23 @@ function extractSlug(id: string, prefix: string): string {
 
 // Phone number deliberately omitted — reversible channels only (email + social).
 // Aligns with /cv recruiter view which doesn't expose phone either.
-function makeContactContent(): string {
+function makeContactContent(alias: string, email: string, githubUrl: string, linkedinUrl: string): string {
+  // Strip protocol from linkedIn for NOTE field
+  const linkedinNote = linkedinUrl.replace("https://www.", "").replace("https://", "");
   return `BEGIN:VCARD
 VERSION:3.0
-FN:NotPelos
-EMAIL:ismaelprr10@gmail.com
-URL:https://github.com/NotPelos
-NOTE:linkedin.com/in/ismael-sanchez-aguilera-repullo
+FN:${alias}
+EMAIL:${email}
+URL:${githubUrl}
+NOTE:${linkedinNote}
 END:VCARD`;
+}
+
+export interface ContactInfo {
+  alias: string;
+  email: string;
+  githubUrl: string;
+  linkedinUrl: string;
 }
 
 export function buildFsFromContent(
@@ -223,7 +232,8 @@ export function buildFsFromContent(
     education: ContentEntry[];
     skillsJson?: Record<string, unknown>;
   },
-  lang: Lang = "es"
+  lang: Lang = "es",
+  contact?: ContactInfo
 ): Record<string, FsNode> {
   // Filter entries by lang
   const aboutEntries = collections.about.filter((e) => e.data["lang"] === lang);
@@ -389,7 +399,9 @@ export function buildFsFromContent(
             "contact.vcf": {
               type: "file",
               name: "contact.vcf",
-              content: makeContactContent(),
+              content: contact
+                ? makeContactContent(contact.alias, contact.email, contact.githubUrl, contact.linkedinUrl)
+                : minimalContact,
             },
             ".secrets": {
               type: "directory",

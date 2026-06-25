@@ -14,6 +14,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout cv-content (private — skip si no hay PAT, e.g. PRs externos)
+        if: ${{ secrets.CV_CONTENT_PAT != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: NotPelos/cv-content
+          token: ${{ secrets.CV_CONTENT_PAT }}
+          path: personal
+
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:

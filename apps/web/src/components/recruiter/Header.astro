@@ -1,4 +1,6 @@
 ---
+import profile from "../../profile";
+
 interface Props {
   lang: "es" | "en";
 }
@@ -6,14 +8,14 @@ interface Props {
 const { lang } = Astro.props;
 
 const locationText = lang === "es"
-  ? "Mairena del Aljarafe, Sevilla · Remoto"
-  : "Mairena del Aljarafe, Seville · Remote";
+  ? `${profile.location.es} · Remoto`
+  : `${profile.location.en} · Remote`;
 
 const titleText = lang === "es"
   ? "Desarrollador Backend · Java · Spring Boot · Microservicios"
   : "Backend Developer · Java · Spring Boot · Microservices";
 
-const avatarAlt = "Foto de Ismael Sánchez Aguilera Repullo";
+const avatarAlt = `Foto de ${profile.fullName}`;
 ---
 
 <header class="sticky top-0 z-20 bg-tn-bg/90 backdrop-blur border-b border-tn-border py-4">
@@ -44,7 +46,7 @@ const avatarAlt = "Foto de Ismael Sánchez Aguilera Repullo";
       <!-- Nombre, título y contacto -->
       <div class="flex-1 min-w-0 text-center sm:text-left">
         <h1 class="text-xl font-medium text-tn-text leading-tight">
-          Ismael Sánchez Aguilera Repullo
+          {profile.fullName}
         </h1>
         <p class="text-tn-cyan text-sm mt-0.5">{titleText}</p>
 
@@ -52,10 +54,10 @@ const avatarAlt = "Foto de Ismael Sánchez Aguilera Repullo";
         <ul class="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 mt-2 text-xs text-tn-text-mute" aria-label={lang === "es" ? "Contacto" : "Contact"}>
           <li>
             <a
-              href="mailto:ismaelprr10@gmail.com"
+              href={`mailto:${profile.email}`}
               class="hover:text-tn-blue transition-colors"
             >
-              ismaelprr10@gmail.com
+              {profile.email}
             </a>
           </li>
           <li aria-hidden="true" class="text-tn-border select-none">·</li>
@@ -63,19 +65,19 @@ const avatarAlt = "Foto de Ismael Sánchez Aguilera Repullo";
           <li aria-hidden="true" class="text-tn-border select-none">·</li>
           <li>
             <a
-              href="https://github.com/NotPelos"
+              href={profile.social.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               class="hover:text-tn-blue transition-colors"
               aria-label="GitHub profile"
             >
-              github.com/NotPelos
+              github.com/{profile.social.githubUser}
             </a>
           </li>
           <li aria-hidden="true" class="text-tn-border select-none">·</li>
           <li>
             <a
-              href="https://www.linkedin.com/in/ismael-sanchez-aguilera-repullo/"
+              href={profile.social.linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
               class="hover:text-tn-blue transition-colors"

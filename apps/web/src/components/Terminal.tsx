@@ -73,6 +73,12 @@ interface TerminalState {
   soundEnabled: boolean;
   // Matrix rain overlay
   matrixActive: boolean;
+  // Prompt label shown as "user@host" in the terminal prompt.
+  promptUser: string;
+  // Short location string for neofetch Host line.
+  neofetchHost: string;
+  // Social links for AI command responses.
+  social: { linkedinUrl: string; githubUrl: string; githubUser: string };
 }
 
 type Action =
@@ -118,9 +124,12 @@ interface InitialProps {
   defaultLang: Lang;
   initialFs: Record<string, FsNode>;
   initialSoundEnabled: boolean;
+  promptUser: string;
+  neofetchHost: string;
+  social: { linkedinUrl: string; githubUrl: string; githubUser: string };
 }
 
-function makeInitialState({ defaultLang, initialFs, initialSoundEnabled }: InitialProps): TerminalState {
+function makeInitialState({ defaultLang, initialFs, initialSoundEnabled, promptUser, neofetchHost, social }: InitialProps): TerminalState {
   return {
     output: WELCOME_LINES,
     cwd: INITIAL_CWD,
@@ -135,15 +144,18 @@ function makeInitialState({ defaultLang, initialFs, initialSoundEnabled }: Initi
     pendingFetchPayload: null,
     soundEnabled: initialSoundEnabled,
     matrixActive: false,
+    promptUser,
+    neofetchHost,
+    social,
   };
 }
 
-function buildPromptLine(cwd: string[], userInput: string): Line {
+function buildPromptLine(cwd: string[], userInput: string, promptUser: string): Line {
   const cwdDisplay = formatPath(cwd);
   return {
     kind: "prompt",
     segments: [
-      { text: "notpelos@cv", color: "tn-blue" },
+      { text: promptUser, color: "tn-blue" },
       { text: ":", color: "tn-text" },
       { text: cwdDisplay, color: "tn-magenta" },
       { text: "$ ", color: "tn-text" },
@@ -251,7 +263,7 @@ function reducer(
     }
 
     case "CTRL_C": {
-      const promptLine = buildPromptLine(state.cwd, state.input);
+      const promptLine = buildPromptLine(state.cwd, state.input, state.promptUser);
       const cancelLine: Line = {
         kind: "plain",
         segments: [{ text: "^C", color: "tn-text-dim" }],
@@ -274,7 +286,7 @@ function reducer(
 
     case "EXECUTE": {
       const raw = action.input.trim();
-      const promptLine = buildPromptLine(state.cwd, raw);
+      const promptLine = buildPromptLine(state.cwd, raw, state.promptUser);
       const activeFs = state.fs;
 
       if (raw === "") {
@@ -346,6 +358,9 @@ function reducer(
         t: tFn,
         endpoints: action.endpoints,
         userAgent: action.userAgent,
+        promptUser: state.promptUser,
+        neofetchHost: state.neofetchHost,
+        social: state.social,
       };
 
       const result = command.run(args, ctx);
@@ -603,6 +618,12 @@ interface TerminalProps {
   skillsData?: SkillsData;
   defaultLang?: Lang;
   endpoints?: Endpoints;
+  /** String shown as "user@host" in the prompt, e.g. "notpelos@cv". Falls back to "user@cv". */
+  promptUser?: string;
+  /** Short location shown in neofetch Host line, e.g. "Seville". Falls back to "unknown". */
+  neofetchHost?: string;
+  /** Social links passed to AI command responses. */
+  social?: { linkedinUrl: string; githubUrl: string; githubUser: string };
 }
 
 const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
@@ -612,11 +633,20 @@ const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
 
 const FALLBACK_ENDPOINTS: Endpoints = { api: "", worker: "" };
 
+const FALLBACK_SOCIAL = {
+  linkedinUrl: "https://www.linkedin.com/in/your-handle",
+  githubUrl: "https://github.com/youralias",
+  githubUser: "youralias",
+};
+
 export default function Terminal({
   initialFsByLang,
   skillsData,
   defaultLang = "es",
   endpoints = FALLBACK_ENDPOINTS,
+  promptUser = "user@cv",
+  neofetchHost = "unknown",
+  social = FALLBACK_SOCIAL,
 }: TerminalProps = {}) {
   const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
 
@@ -624,7 +654,7 @@ export default function Terminal({
     reducer,
     // defaultLang is typed as Lang ("es"|"en"), not user-controlled input
     // eslint-disable-next-line security/detect-object-injection
-    { defaultLang, initialFs: fsByLang[defaultLang], initialSoundEnabled: false },
+    { defaultLang, initialFs: fsByLang[defaultLang], initialSoundEnabled: false, promptUser, neofetchHost, social },
     makeInitialState
   );
 
@@ -696,6 +726,9 @@ export default function Terminal({
       t: tFn,
       endpoints,
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+      promptUser,
+      neofetchHost,
+      social,
     };
 
     const { lines } = neofetchCmd.run([], ctx);
@@ -1053,7 +1086,7 @@ export default function Terminal({
 
       {/* Current prompt line with blinking cursor */}
       <div class="flex items-baseline flex-wrap">
-        <span class="text-tn-blue">notpelos@cv</span>
+        <span class="text-tn-blue">{state.promptUser}</span>
         <span class="text-tn-text">:</span>
         <span class="text-tn-magenta">{cwdDisplay}</span>
         <span class="text-tn-text">{"$ "}</span>

@@ -33,6 +33,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout cv-content (private repo con datos personales)
+        uses: actions/checkout@v4
+        with:
+          repository: NotPelos/cv-content
+          token: ${{ secrets.CV_CONTENT_PAT }}
+          path: personal
+
       - name: Habilitar corepack (pnpm)
         run: corepack enable
 

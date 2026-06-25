@@ -9,6 +9,7 @@ import Skills from "../../components/recruiter/Skills.astro";
 import Education from "../../components/recruiter/Education.astro";
 import BackToTerminal from "../../components/recruiter/BackToTerminal.astro";
 import LangSwitch from "../../components/recruiter/LangSwitch.astro";
+import profile from "../../profile";
 
 const lang = "es" as const;
 ---
@@ -33,16 +34,16 @@ const lang = "es" as const;
 
   <footer class="max-w-[720px] mx-auto px-4 sm:px-6 pb-10 text-xs text-tn-text-dim text-center">
     <p>
-      <a href="/" class="hover:text-tn-blue transition-colors no-print">notpelos.pages.dev</a>
-      <span class="print-only">notpelos.pages.dev</span>
+      <a href="/" class="hover:text-tn-blue transition-colors no-print">{profile.domain}</a>
+      <span class="print-only">{profile.domain}</span>
       &nbsp;·&nbsp;
       <a
-        href="https://github.com/NotPelos"
+        href={profile.social.githubUrl}
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-tn-blue transition-colors"
       >
-        github.com/NotPelos
+        github.com/{profile.social.githubUser}
       </a>
     </p>
   </footer>

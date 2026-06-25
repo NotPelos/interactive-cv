@@ -59,25 +59,18 @@ export const aiScript: AiEntry[] = [
     en: "Yes. Preferred setup. I ship better without noise.",
   },
   {
-    triggers: ["where", "location", "donde vives", "sevilla"],
-    es: "Sevilla, Mairena del Aljarafe. Calor, microservicios y café.",
-    en: "Seville, Mairena del Aljarafe. Heat, microservices and coffee.",
+    triggers: ["where", "location", "donde vives"],
+    es: "Míralo en `cat contact.vcf` — o escribe `whoami` para saber más.",
+    en: "Check `cat contact.vcf` — or type `whoami` to learn more.",
   },
   {
     triggers: ["english", "ingles", "idiomas"],
     es: "Español nativo, inglés profesional. Sobreviví 3 meses en Holanda.",
     en: "Spanish native, English at professional level. Survived 3 months in the Netherlands.",
   },
-  {
-    triggers: ["linkedin"],
-    es: "linkedin.com/in/ismael-sanchez-aguilera-repullo — pero el CV real es éste.",
-    en: "linkedin.com/in/ismael-sanchez-aguilera-repullo — but the real CV is right here.",
-  },
-  {
-    triggers: ["github", "repos", "proyectos"],
-    es: "github.com/NotPelos — `ls /var/log/github/` lo ves en vivo.",
-    en: "github.com/NotPelos — `ls /var/log/github/` to see it live.",
-  },
+  // linkedin and github entries are handled dynamically in commands/ai.ts
+  // (they need ctx.social to inject the real URLs at runtime).
+
   {
     triggers: ["why backend", "por que backend", "why java"],
     es: "Porque me gusta pensar el sistema entero, no solo cómo se ve en mobile.",

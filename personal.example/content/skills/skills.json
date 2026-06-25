@@ -1,0 +1,20 @@
+{
+  "languages": {
+    "java": { "level": 5, "yearsApprox": 4 },
+    "typescript": { "level": 3, "yearsApprox": 2 }
+  },
+  "frameworks": {
+    "spring-boot": 5,
+    "astro": 3
+  },
+  "infra": {
+    "docker": 4,
+    "kubernetes": 3
+  },
+  "databases": {
+    "postgresql": 4,
+    "mongodb": 3
+  },
+  "methods": ["scrum", "kanban"],
+  "soft": ["comunicación", "resolución de problemas"]
+}

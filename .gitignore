@@ -55,4 +55,22 @@ test-results/
 playwright/.cache/
 
 # --- Materiales personales (no públicos) ---
+# personal/ vive en el repo privado NotPelos/cv-content.
+# sync-content.mjs lo copia aquí antes del build.
 personal/
+
+# Archivos generados por sync-content.mjs (datos reales del owner).
+# En el repo público solo existe profile.template.ts (placeholder).
+apps/web/src/profile.ts
+
+# Contenido del CV (copiado desde personal/ en sync-content.mjs)
+apps/web/src/content/
+
+# Avatar y OG image generados desde personal/avatar/
+apps/web/source/
+apps/web/public/avatar/
+apps/web/public/og-image.png
+
+# PDFs estáticos de fallback (generados externamente)
+apps/web/public/cv-static-es.pdf
+apps/web/public/cv-static-en.pdf

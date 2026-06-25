@@ -63,6 +63,16 @@ export interface Ctx {
   t: (key: string, args?: Record<string, string>) => string; // i18n helper
   endpoints: Endpoints;         // external service URLs (empty = degraded mode)
   userAgent?: string;           // navigator.userAgent — injected client-side only; undefined in SSR/tests
+  /** "user@host" string shown in terminal prompt — used by neofetch header. */
+  promptUser?: string;
+  /** Short location string for neofetch Host line, e.g. "Sevilla, ES". */
+  neofetchHost?: string;
+  /** Social links for AI command responses. */
+  social?: {
+    linkedinUrl: string;
+    githubUrl: string;
+    githubUser: string;
+  };
 }
 
 export type CommandResult =
