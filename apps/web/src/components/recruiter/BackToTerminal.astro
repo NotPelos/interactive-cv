@@ -5,7 +5,10 @@ interface Props {
 
 const { lang } = Astro.props;
 
-const label = lang === "es" ? "← volver a terminal" : "← back to terminal";
+// Etiqueta corta en móvil para no solapar con el nombre del header sticky.
+// Full text solo desde sm en adelante (>= 640px), donde ya hay hueco de sobra.
+const shortLabel = lang === "es" ? "← Volver" : "← Back";
+const fullLabel = lang === "es" ? "← volver a terminal" : "← back to terminal";
 ---
 
 <a
@@ -13,5 +16,6 @@ const label = lang === "es" ? "← volver a terminal" : "← back to terminal";
   class="no-print fixed top-4 left-4 z-30 text-xs text-tn-blue hover:text-tn-text border border-tn-border rounded px-2 py-1 bg-tn-bg/90 backdrop-blur transition-colors"
   aria-label={lang === "es" ? "Volver al terminal interactivo" : "Back to interactive terminal"}
 >
-  {label}
+  <span class="sm:hidden">{shortLabel}</span>
+  <span class="hidden sm:inline">{fullLabel}</span>
 </a>
