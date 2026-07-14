@@ -83,7 +83,18 @@ export default {
     }
 
     // --- Rate limit ---
-    const rl = await checkRateLimit(request, env.GITHUB_CACHE);
+    // Wrapped defensively: if checkRateLimit throws (e.g. KV write rejected),
+    // we fail open — better to serve a legit request than 1101 the whole worker.
+    // The dispatch below still runs under its own try/catch.
+    let rl: { allowed: boolean; retryAfter: number };
+    try {
+      rl = await checkRateLimit(request, env.GITHUB_CACHE);
+    } catch (err) {
+      console.log(
+        JSON.stringify({ path, event: "rateLimit_error", msg: (err as Error).message })
+      );
+      rl = { allowed: true, retryAfter: 0 };
+    }
     if (!rl.allowed) {
       const resp = buildRateLimitResponse(rl.retryAfter);
       return withCors(resp, env);

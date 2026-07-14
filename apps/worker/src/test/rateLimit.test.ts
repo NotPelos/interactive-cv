@@ -105,6 +105,30 @@ describe("Rate limiter", () => {
     expect(blocked.retryAfter).toBe(40);
   });
 
+  it("kv.put receives expirationTtl >= 60 even at the end of the window", async () => {
+    // Cloudflare KV rejects expirationTtl < 60. Simulate a request near the
+    // very end of the window (elapsed = 59.5s) and verify the put is called
+    // with a TTL of at least 60s.
+    const kv = createMockKv();
+    const putSpy = vi.spyOn(kv, "put");
+    const request = makeRequest("5.6.7.8");
+    const firstHitMs = 5_000_000;
+
+    // First hit opens the window.
+    vi.spyOn(Date, "now").mockReturnValue(firstHitMs);
+    await checkRateLimit(request, kv);
+
+    // Second hit at 59.5s into the window — the naive math gives ceil(0.5)=1.
+    vi.spyOn(Date, "now").mockReturnValue(firstHitMs + 59_500);
+    await checkRateLimit(request, kv);
+
+    // Every put call must have expirationTtl >= 60.
+    for (const call of putSpy.mock.calls) {
+      const opts = call[2] as { expirationTtl?: number } | undefined;
+      expect(opts?.expirationTtl).toBeGreaterThanOrEqual(60);
+    }
+  });
+
   it("window expires after WINDOW_MS and allows new requests", async () => {
     // This test verifies the design intent: after the TTL expires (simulated by
     // clearing the KV entry, since the mock has no real TTL enforcement),

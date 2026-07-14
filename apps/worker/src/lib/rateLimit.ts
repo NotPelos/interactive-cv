@@ -78,9 +78,15 @@ export async function checkRateLimit(
   // Anchor the window to the first hit timestamp.
   const firstHitMs = metadata?.firstHitMs ?? Date.now();
   const elapsedMs = Date.now() - firstHitMs;
-  // remainingTtl must be >= 1s (KV minimum). If elapsed somehow exceeds the
-  // window (clock skew / race), cap at 1s so the entry expires quickly.
-  const remainingTtl = Math.max(1, Math.ceil((WINDOW_MS - elapsedMs) / 1000));
+  // Cloudflare KV rejects expirationTtl < 60. Clamp to the minimum: near the
+  // end of the window elapsedMs approaches WINDOW_MS, so remainingTtl would
+  // otherwise drop below 60 and kv.put would throw a runtime error (which
+  // bubbles past the dispatch try/catch and Cloudflare returns 1101).
+  const KV_MIN_TTL = 60;
+  const remainingTtl = Math.max(
+    KV_MIN_TTL,
+    Math.ceil((WINDOW_MS - elapsedMs) / 1000)
+  );
 
   await kv.put(key, String(current + 1), {
     expirationTtl: remainingTtl,
