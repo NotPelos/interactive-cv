@@ -79,6 +79,8 @@ interface TerminalState {
   neofetchHost: string;
   // Social links for AI command responses.
   social: { linkedinUrl: string; githubUrl: string; githubUser: string };
+  // Visit counters — populated by a one-shot fetch to the worker on mount.
+  visits: { total: number; today: number } | null;
 }
 
 type Action =
@@ -95,6 +97,7 @@ type Action =
   | { type: "INJECT_FS_NODE"; path: string[]; name: string; content: string }
   | { type: "START_MATRIX" }
   | { type: "STOP_MATRIX" }
+  | { type: "SET_VISITS"; visits: { total: number; today: number } }
   // Appends neofetch output after the welcome banner on initial boot — no prompt echo.
   | { type: "BOOT_NEOFETCH"; lines: Line[] };
 
@@ -147,6 +150,7 @@ function makeInitialState({ defaultLang, initialFs, initialSoundEnabled, promptU
     promptUser,
     neofetchHost,
     social,
+    visits: null,
   };
 }
 
@@ -223,6 +227,9 @@ function reducer(
 
     case "STOP_MATRIX":
       return { ...state, matrixActive: false };
+
+    case "SET_VISITS":
+      return { ...state, visits: action.visits };
 
     case "FETCH_DONE":
       return { ...state, pendingFetch: null, pendingFetchPayload: null };
@@ -361,6 +368,7 @@ function reducer(
         promptUser: state.promptUser,
         neofetchHost: state.neofetchHost,
         social: state.social,
+        visits: state.visits ?? undefined,
       };
 
       const result = command.run(args, ctx);
@@ -681,6 +689,50 @@ export default function Terminal({
     dispatch({ type: "SET_SOUND", enabled: stored === "on" });
   }, []);
 
+  // One-shot visit ping — increments the counter once per IP+day (worker-side dedupe).
+  // Best-effort: silent on failure (degraded mode, offline, ad-blocker).
+  // Sends no cookies or credentials — the worker only sees the IP header set by Cloudflare.
+  useEffect(() => {
+    const workerUrl = endpoints.worker;
+    if (!workerUrl || !URL.canParse(workerUrl)) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    async function pingVisits(): Promise<void> {
+      try {
+        const response = await fetch(`${workerUrl}/api/visits/hit`, {
+          method: "GET",
+          credentials: "omit",
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const raw: unknown = await response.json();
+        if (
+          raw &&
+          typeof raw === "object" &&
+          typeof (raw as { total?: unknown }).total === "number" &&
+          typeof (raw as { today?: unknown }).today === "number"
+        ) {
+          const { total, today } = raw as { total: number; today: number };
+          if (total >= 0 && today >= 0) {
+            dispatch({ type: "SET_VISITS", visits: { total, today } });
+          }
+        }
+      } catch {
+        // Degraded mode — stats command will show a friendly error, neofetch just omits the line.
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    void pingVisits();
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [endpoints.worker]);
+
   // Lang detection + persistence
   useEffect(() => {
     if (isInitialMount.current) {
@@ -729,6 +781,10 @@ export default function Terminal({
       promptUser,
       neofetchHost,
       social,
+      // visits: the ping is racing with this boot render — usually undefined here.
+      // The line is omitted from neofetch when missing, and `stats` picks up the
+      // value once the fetch resolves.
+      visits: state.visits ?? undefined,
     };
 
     const { lines } = neofetchCmd.run([], ctx);

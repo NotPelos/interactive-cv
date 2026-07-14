@@ -63,4 +63,52 @@ describe("Path whitelist", () => {
     const response = await worker.fetch(request, env);
     expect(response.status).toBe(200);
   });
+
+  it("returns 200 for /api/visits (read)", async () => {
+    const env = createMockEnv();
+    const request = new Request("http://worker/api/visits");
+    const response = await worker.fetch(request, env);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { total: number; today: number };
+    expect(body).toEqual({ total: 0, today: 0 });
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("returns 200 for /api/visits/hit (increment) with browser Origin", async () => {
+    const env = createMockEnv();
+    (env as unknown as { VISIT_SALT: string }).VISIT_SALT = "test-salt";
+    const request = new Request("http://worker/api/visits/hit", {
+      headers: {
+        "cf-connecting-ip": "9.9.9.9",
+        Origin: "https://notpelos.pages.dev",
+      },
+    });
+    const response = await worker.fetch(request, env);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { total: number; today: number };
+    expect(body.total).toBe(1);
+    expect(body.today).toBe(1);
+  });
+
+  it("returns 403 for /api/visits/hit without Origin (blocks curl/scripts)", async () => {
+    const env = createMockEnv();
+    (env as unknown as { VISIT_SALT: string }).VISIT_SALT = "test-salt";
+    const request = new Request("http://worker/api/visits/hit", {
+      headers: { "cf-connecting-ip": "8.8.8.8" },
+    });
+    const response = await worker.fetch(request, env);
+    expect(response.status).toBe(403);
+    // Verify no side effect: counter still zero.
+    const readReq = new Request("http://worker/api/visits");
+    const readResp = await worker.fetch(readReq, env);
+    const body = (await readResp.json()) as { total: number; today: number };
+    expect(body).toEqual({ total: 0, today: 0 });
+  });
+
+  it("still allows /api/visits (read) without Origin", async () => {
+    const env = createMockEnv();
+    const request = new Request("http://worker/api/visits");
+    const response = await worker.fetch(request, env);
+    expect(response.status).toBe(200);
+  });
 });

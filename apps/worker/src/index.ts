@@ -1,9 +1,11 @@
 /**
- * Cloudflare Worker — GitHub API proxy for NotPelos interactive CV.
+ * Cloudflare Worker — API for NotPelos interactive CV.
  *
  * Routes (whitelist — anything else is 404):
  *   GET /api/github/profile  → proxies /users/NotPelos, 1h KV cache
  *   GET /api/github/repos    → proxies /users/NotPelos/repos, 1h KV cache, top 30
+ *   GET /api/visits          → read visit counters { total, today }
+ *   GET /api/visits/hit      → increment (once per IP+day), return counters
  *
  * Security:
  *   - Strict path whitelist (no echo of unknown paths)
@@ -22,9 +24,15 @@ import {
 import { checkRateLimit, buildRateLimitResponse } from "./lib/rateLimit.js";
 import { handleProfile, UpstreamError } from "./handlers/profile.js";
 import { handleRepos } from "./handlers/repos.js";
+import { handleVisitsRead, handleVisitsHit } from "./handlers/visits.js";
 
 // Allowed paths — strict whitelist. New paths require a code change.
-const ALLOWED_PATHS = new Set(["/api/github/profile", "/api/github/repos"]);
+const ALLOWED_PATHS = new Set([
+  "/api/github/profile",
+  "/api/github/repos",
+  "/api/visits",
+  "/api/visits/hit",
+]);
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -65,6 +73,15 @@ export default {
       return new Response("Forbidden", { status: 403 });
     }
 
+    // --- Stricter check for /api/visits/hit: require Origin header ---
+    // The visits/hit endpoint mutates KV, so we refuse requests with no Origin
+    // (curl, scripts, servers). The browser always attaches Origin to fetch()
+    // calls, so legitimate frontend traffic is unaffected. This prevents
+    // trivial counter inflation by IP-rotating scripts.
+    if (path === "/api/visits/hit" && origin === null) {
+      return withCors(new Response("Forbidden", { status: 403 }), env);
+    }
+
     // --- Rate limit ---
     const rl = await checkRateLimit(request, env.GITHUB_CACHE);
     if (!rl.allowed) {
@@ -74,6 +91,26 @@ export default {
 
     // --- Dispatch ---
     try {
+      // Visit counter endpoints — no upstream, KV-only. No cache header.
+      if (path === "/api/visits" || path === "/api/visits/hit") {
+        const data =
+          path === "/api/visits/hit"
+            ? await handleVisitsHit(request, env)
+            : await handleVisitsRead(env);
+        console.log(JSON.stringify({ path, status: 200 }));
+        return withCors(
+          new Response(JSON.stringify(data), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              // Never cache — the counter must reflect current state each read.
+              "Cache-Control": "no-store",
+            },
+          }),
+          env
+        );
+      }
+
       let data: unknown;
       let cacheHit: boolean;
 

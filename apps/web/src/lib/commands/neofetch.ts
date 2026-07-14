@@ -101,6 +101,14 @@ const neofetch: Command = {
     const neofetchHost = ctx.neofetchHost ?? "unknown";
     const separatorLine = "─".repeat(neofetchHeader.length);
 
+    // Visits line — only render when the counter has arrived from the worker.
+    // Uses locale grouping (1234 → "1,234" en / "1.234" es) for readability.
+    const visitsValue = ctx.visits
+      ? new Intl.NumberFormat(ctx.lang === "en" ? "en-US" : "es-ES").format(
+          ctx.visits.total
+        )
+      : null;
+
     const stats: Array<{ label: string; value: string }> = [
       { label: neofetchHeader, value: "" },
       { label: separatorLine, value: "" },
@@ -111,6 +119,7 @@ const neofetch: Command = {
       { label: "Shell", value: "Spring Boot 3" },
       { label: "Top langs", value: buildTopLangs(ctx.skillsData) },
       { label: "Files", value: String(fileCount) + " en ~/"},
+      ...(visitsValue !== null ? [{ label: "Visits", value: visitsValue }] : []),
       { label: "Coffee", value: "████████████░ 92%" },
       { label: "vim/emacs", value: "vim ofc" },
     ];

@@ -18,5 +18,10 @@ export function makeCtx(
     lang,
     t: makeT(lang),
     endpoints: overrides.endpoints ?? { api: "", worker: "" },
+    ...(overrides.userAgent !== undefined ? { userAgent: overrides.userAgent } : {}),
+    ...(overrides.promptUser !== undefined ? { promptUser: overrides.promptUser } : {}),
+    ...(overrides.neofetchHost !== undefined ? { neofetchHost: overrides.neofetchHost } : {}),
+    ...(overrides.social !== undefined ? { social: overrides.social } : {}),
+    ...(overrides.visits !== undefined ? { visits: overrides.visits } : {}),
   };
 }

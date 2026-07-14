@@ -73,6 +73,8 @@ export interface Ctx {
     githubUrl: string;
     githubUser: string;
   };
+  /** Visit counters fetched from the worker. Undefined until the ping resolves (or if it fails). */
+  visits?: { total: number; today: number };
 }
 
 export type CommandResult =

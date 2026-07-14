@@ -38,11 +38,16 @@
 - **No `eval`, no `Function()`, no `dangerouslySetInnerHTML`**. Linter lo bloquea.
 
 ### Worker (Cloudflare)
-- Whitelist de endpoints de GitHub permitidos (`/users/NotPelos`, `/users/NotPelos/repos`).
+- Whitelist de endpoints permitidos (`/api/github/profile`, `/api/github/repos`, `/api/visits`, `/api/visits/hit`).
 - Rate limit por IP: 30 req/min con `cf.cacheKey`.
 - CORS: solo `https://notpelos.pages.dev`.
 - Si se usa PAT: en secret de Cloudflare, **nunca** en código.
 - Logs sin datos personales.
+- **Contador de visitas**:
+  - IPs se hashean con SHA-256(salt || ip || day) antes de guardar el flag "seen" en KV; el salt (`VISIT_SALT`) es un secreto crítico — su fuga permite reversar hashes por diccionario (~4B IPv4). Rotable con `wrangler secret put VISIT_SALT` (invalida los flags "seen" existentes hasta que expire su TTL de 48h).
+  - `/api/visits/hit` exige header `Origin` presente → bloquea `curl` y scripts sin browser. `/api/visits` (lectura) sigue accesible desde cualquier cliente.
+  - Cap diario de escrituras (`WRITE_CAP_PER_DAY = 500`) para blindar el free tier de KV (1000 writes/día) de un pool IP-rotating: cuando se llega al cap, `/hit` degrada a solo lectura hasta las 00:00 UTC.
+  - Sin salt configurado → `/hit` degrada a solo lectura (fail-closed).
 
 ### Backend (Spring Boot)
 - **Spring Security** activo aunque no haya auth — para gestionar headers y CORS.

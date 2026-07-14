@@ -31,7 +31,8 @@ Crear `apps/web/public/_headers` con la CSP de [SECURITY.md](SECURITY.md).
 - `wrangler.toml` con nombre `xpelos-api`.
 - `wrangler deploy` desde CI.
 - Secret `GITHUB_TOKEN` (PAT con `public_repo` scope si necesitamos quitar el rate limit anónimo) → `wrangler secret put GITHUB_TOKEN`.
-- KV namespace `GITHUB_CACHE` para cachear respuestas 1h.
+- Secret `VISIT_SALT` — string aleatorio largo usado para hashear IPs antes de guardar el flag "ya visto hoy". Sin este secret, `/api/visits/hit` degrada a solo lectura y el contador nunca sube. Generar con `openssl rand -hex 32` y aplicar con `wrangler secret put VISIT_SALT`. Rotarlo invalida los flags "seen" existentes (aparecen visitas repetidas hasta que expire el TTL de 48h) — hacerlo solo si sospechas fuga.
+- KV namespace `GITHUB_CACHE` para cachear respuestas 1h. **También** almacena los contadores de visitas (`visits:total`, `visits:day:*`, `visits:seen:*`), así que borrarlo resetea el contador.
 
 ## Fly.io — Backend Spring Boot
 

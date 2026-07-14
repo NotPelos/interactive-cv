@@ -14,6 +14,8 @@ export interface Env {
   ALLOWED_ORIGIN?: string;
   /** Optional: GitHub PAT to raise upstream rate limit to 5000/h. */
   GITHUB_TOKEN?: string;
+  /** Optional: salt used to hash visitor IPs for per-day dedupe. Missing → visits endpoint stays read-only. */
+  VISIT_SALT?: string;
 }
 
 export function getAllowedOrigin(env: Env): string {
