@@ -59,14 +59,16 @@ jobs:
         run: pnpm --filter web sync
 
       - name: Instalar Typst
-        # Se instala en /usr/local/bin, disponible como `typst` en el PATH.
-        # `latest` en vez de una versión pinneada: la action a veces no encuentra
-        # tags recientes por race con la caché del release feed. Como la plantilla
-        # es sencilla y estable, `latest` es aceptable — si algún día rompe algo
-        # se pinnea a un `v0.X.Y` concreto.
-        uses: typst-community/setup-typst@v4
-        with:
-          typst-version: "latest"
+        # Descarga directa del binario oficial. La action typst-community/setup-typst
+        # ha estado fallando ("Typst latest could not be resolved") por lo que va
+        # el binario a pelo — es 2 líneas de bash y no depende de terceros.
+        # Version pinneada porque los renders deben ser deterministas entre runs.
+        run: |
+          set -euo pipefail
+          TYPST_VERSION="v0.15.1"
+          curl -sSL "https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" \
+            | tar -xJ --strip-components=1 -C /usr/local/bin --wildcards 'typst-*/typst'
+          typst --version
 
       - name: Generar CV PDFs (cv-es.pdf + cv-en.pdf)
         # Lee el contenido ya sincronizado + fuentes en scripts/cv-pdf/fonts/
