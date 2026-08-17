@@ -58,6 +58,19 @@ jobs:
         # Necesario ANTES de typecheck porque src/profile.ts es gitignored.
         run: pnpm --filter web sync
 
+      - name: Instalar Typst
+        # Se instala en /usr/local/bin, disponible como `typst` en el PATH.
+        # Versión bundleada con el repo para render determinístico entre runs.
+        uses: typst-community/setup-typst@v4
+        with:
+          typst-version: "0.15.1"
+
+      - name: Generar CV PDFs (cv-es.pdf + cv-en.pdf)
+        # Lee el contenido ya sincronizado + fuentes en scripts/cv-pdf/fonts/
+        # y produce cv-{es,en}.pdf en apps/web/public/ para que el build de
+        # Astro los recoja como estáticos.
+        run: pnpm --filter web cv:pdf
+
       - name: Typecheck (astro check)
         run: pnpm --filter web typecheck
 

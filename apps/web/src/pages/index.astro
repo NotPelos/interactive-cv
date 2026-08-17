@@ -12,8 +12,8 @@ import "../styles/global.css";
 // Endpoints de servicios externos. Leídos desde variables de entorno en build time
 // y pasados al island Terminal como prop. Astro expone al cliente solo las vars PUBLIC_.
 // Si no están definidas, se usan strings vacíos y el Terminal entra en modo degradado:
-//   - download cv.pdf → abre PDF estático en /cv-static-{lang}.pdf
 //   - repos → informa de modo degradado, sin fetch
+// El comando `download` sirve el estático /cv-{lang}.pdf directamente, sin API.
 const endpoints: Endpoints = {
   api: import.meta.env.PUBLIC_API_URL ?? "",
   worker: import.meta.env.PUBLIC_WORKER_URL ?? "",
