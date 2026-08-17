@@ -60,10 +60,13 @@ jobs:
 
       - name: Instalar Typst
         # Se instala en /usr/local/bin, disponible como `typst` en el PATH.
-        # Versión bundleada con el repo para render determinístico entre runs.
+        # `latest` en vez de una versión pinneada: la action a veces no encuentra
+        # tags recientes por race con la caché del release feed. Como la plantilla
+        # es sencilla y estable, `latest` es aceptable — si algún día rompe algo
+        # se pinnea a un `v0.X.Y` concreto.
         uses: typst-community/setup-typst@v4
         with:
-          typst-version: "0.15.1"
+          typst-version: "latest"
 
       - name: Generar CV PDFs (cv-es.pdf + cv-en.pdf)
         # Lee el contenido ya sincronizado + fuentes en scripts/cv-pdf/fonts/
