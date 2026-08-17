@@ -209,6 +209,8 @@ export default function AdaptModal({ lang, apiBaseUrl, cvData, onClose }: Props)
               ) : (
                 <ul class="space-y-1">
                   {result.relevantHighlights.map((idx) => {
+                    // idx viene del backend Java (ya clampeado a rango válido)
+                    // eslint-disable-next-line security/detect-object-injection
                     const h = cvData.highlights[idx];
                     if (!h) return null;
                     return (
@@ -230,6 +232,8 @@ export default function AdaptModal({ lang, apiBaseUrl, cvData, onClose }: Props)
               ) : (
                 <ul class="space-y-2">
                   {result.relevantExperience.map((idx) => {
+                    // idx clampeado por el backend
+                    // eslint-disable-next-line security/detect-object-injection
                     const e = cvData.experience[idx];
                     if (!e) return null;
                     return (
@@ -254,6 +258,8 @@ export default function AdaptModal({ lang, apiBaseUrl, cvData, onClose }: Props)
               ) : (
                 <ul class="space-y-2">
                   {result.relevantProjects.map((idx) => {
+                    // idx clampeado por el backend
+                    // eslint-disable-next-line security/detect-object-injection
                     const p = cvData.projects[idx];
                     if (!p) return null;
                     return (

@@ -58,9 +58,10 @@ function formatDate(raw: unknown, lang: "es" | "en"): string {
   const s = String(raw);
   const m = s.match(/^(\d{4})-(\d{2})/);
   if (!m) return s;
-  // idx clamped
+  // idx clamped a [0, 11] — seguro para indexar el array
   const idx = Math.min(11, Math.max(0, parseInt(m[2]!, 10) - 1));
   const months = lang === "en" ? MONTHS_EN : MONTHS_ES;
+  // eslint-disable-next-line security/detect-object-injection
   return `${months[idx]} ${m[1]}`;
 }
 
