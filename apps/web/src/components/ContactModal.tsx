@@ -141,6 +141,8 @@ interface Props {
 type Status = "idle" | "sending" | "success" | "error";
 
 export default function ContactModal({ lang, apiBaseUrl, turnstileSiteKey, onClose }: Props) {
+  // lang es typed como Lang ("es"|"en"), no user-controlled — el índice es seguro
+  // eslint-disable-next-line security/detect-object-injection
   const t = COPY[lang];
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
