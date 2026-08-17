@@ -273,8 +273,11 @@ export default function ContactModal({ lang, apiBaseUrl, turnstileSiteKey, onClo
     }
   }
 
+  // bg-tn-bg (fondo del terminal, más oscuro que el modal) para contrastar con
+  // el fondo tn-elev del modal. Placeholder en tn-text-dim para que no compita
+  // con el texto real (que es tn-text, claro).
   const inputCls =
-    "w-full bg-tn-bg-alt border border-tn-border rounded px-3 py-2 text-sm text-tn-text focus:outline-none focus:ring-1 focus:ring-tn-blue";
+    "w-full bg-tn-bg border border-tn-border rounded px-3 py-2 text-sm text-tn-text placeholder:text-tn-text-dim focus:outline-none focus:ring-1 focus:ring-tn-blue";
   const labelCls = "block text-xs uppercase tracking-wider text-tn-text-mute mb-1";
   const errCls = "text-xs text-tn-red mt-1";
 
