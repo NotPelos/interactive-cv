@@ -11,6 +11,8 @@ import { detectLang, LANG_STORAGE_KEY } from "../lib/i18n/detect.js";
 import { readSoundStorage } from "../lib/commands/sound.js";
 import MatrixRain from "./MatrixRain.js";
 import ContactModal from "./ContactModal.js";
+import AdaptModal from "./AdaptModal.js";
+import type { AdaptPayload } from "../lib/cvData.js";
 
 // ---------------------------------------------------------------------------
 // Validated repo shape from Worker response
@@ -84,6 +86,8 @@ interface TerminalState {
   visits: { total: number; today: number } | null;
   // Contact form overlay abierto por el comando `contact`
   contactOpen: boolean;
+  // Adapt overlay abierto por el comando `adapt`
+  adaptOpen: boolean;
 }
 
 type Action =
@@ -103,6 +107,8 @@ type Action =
   | { type: "SET_VISITS"; visits: { total: number; today: number } }
   | { type: "OPEN_CONTACT" }
   | { type: "CLOSE_CONTACT" }
+  | { type: "OPEN_ADAPT" }
+  | { type: "CLOSE_ADAPT" }
   // Appends neofetch output after the welcome banner on initial boot — no prompt echo.
   | { type: "BOOT_NEOFETCH"; lines: Line[] };
 
@@ -157,6 +163,7 @@ function makeInitialState({ defaultLang, initialFs, initialSoundEnabled, promptU
     social,
     visits: null,
     contactOpen: false,
+    adaptOpen: false,
   };
 }
 
@@ -242,6 +249,12 @@ function reducer(
 
     case "CLOSE_CONTACT":
       return { ...state, contactOpen: false };
+
+    case "OPEN_ADAPT":
+      return { ...state, adaptOpen: true };
+
+    case "CLOSE_ADAPT":
+      return { ...state, adaptOpen: false };
 
     case "FETCH_DONE":
       return { ...state, pendingFetch: null, pendingFetchPayload: null };
@@ -464,6 +477,18 @@ function reducer(
         };
       }
 
+      if (result.effect === "openAdapt") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
+          adaptOpen: true,
+        };
+      }
+
       if (result.effect === "fetchRepos") {
         return {
           ...state,
@@ -658,6 +683,8 @@ interface TerminalProps {
   social?: { linkedinUrl: string; githubUrl: string; githubUser: string };
   /** Cloudflare Turnstile site key para el widget del formulario de contacto. */
   turnstileSiteKey?: string;
+  /** CV data por idioma para el modal `adapt` — se envía al backend Gemini. */
+  cvDataByLang?: Record<Lang, AdaptPayload>;
 }
 
 const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
@@ -682,6 +709,7 @@ export default function Terminal({
   neofetchHost = "unknown",
   social = FALLBACK_SOCIAL,
   turnstileSiteKey = "",
+  cvDataByLang,
 }: TerminalProps = {}) {
   const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
 
@@ -1052,13 +1080,10 @@ export default function Terminal({
   const isBlocked = isNavigating || isFetching;
 
   const handleContainerClick = useCallback(() => {
-    // Cuando el modal de contacto está abierto, NO robar el foco al terminal:
-    // el usuario debe poder escribir en los inputs del modal. El modal cubre
-    // toda la pantalla, así que este click seguramente venía a través del
-    // overlay — lo tratamos como "no hacer nada".
-    if (state.contactOpen) return;
+    // Cualquier modal abierto NO debe perder foco por un click al container.
+    if (state.contactOpen || state.adaptOpen) return;
     inputRef.current?.focus();
-  }, [state.contactOpen]);
+  }, [state.contactOpen, state.adaptOpen]);
 
   const activeFs = state.fs;
 
@@ -1166,6 +1191,16 @@ export default function Terminal({
           apiBaseUrl={endpoints.api}
           turnstileSiteKey={turnstileSiteKey}
           onClose={() => dispatch({ type: "CLOSE_CONTACT" })}
+        />
+      )}
+
+      {/* Adapt overlay — se abre con el comando `adapt` */}
+      {state.adaptOpen && cvDataByLang && (
+        <AdaptModal
+          lang={state.lang}
+          apiBaseUrl={endpoints.api}
+          cvData={state.lang === "en" ? cvDataByLang.en : cvDataByLang.es}
+          onClose={() => dispatch({ type: "CLOSE_ADAPT" })}
         />
       )}
 

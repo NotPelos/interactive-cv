@@ -28,7 +28,7 @@ class CorsTest {
 
     @Test
     void preflight_fromAllowedOrigin_returns200WithCorsHeaders() throws Exception {
-        mockMvc.perform(options("/api/cv/pdf")
+        mockMvc.perform(options("/api/visits")
                 .header("Origin", ALLOWED_ORIGIN)
                 .header("Access-Control-Request-Method", "GET"))
             .andExpect(status().isOk())
@@ -38,7 +38,7 @@ class CorsTest {
     @Test
     void preflight_fromBlockedOrigin_noCorsHeader() throws Exception {
         // Spring Security returns 403 or strips the CORS headers for disallowed origins
-        mockMvc.perform(options("/api/cv/pdf")
+        mockMvc.perform(options("/api/visits")
                 .header("Origin", BLOCKED_ORIGIN)
                 .header("Access-Control-Request-Method", "GET"))
             .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));

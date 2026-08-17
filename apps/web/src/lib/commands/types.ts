@@ -85,7 +85,8 @@ export type CommandResult =
   | { lines: Line[]; effect: "downloadPdf"; url: string; fallbackUrl: string; filename: string }
   | { lines: Line[]; effect: "fetchRepos"; url: string }
   | { lines: Line[]; effect: "setSound"; soundEnabled: boolean }
-  | { lines: Line[]; effect: "openContact" };
+  | { lines: Line[]; effect: "openContact" }
+  | { lines: Line[]; effect: "openAdapt" };
 
 export interface Command {
   name: string;

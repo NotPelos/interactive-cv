@@ -6,6 +6,7 @@ import type { ContentEntry, ContactInfo } from "../lib/fs/seed.js";
 import type { SkillsData, Endpoints } from "../lib/commands/types.js";
 import skillsRaw from "../content/skills/skills.json";
 import { skillsSchema } from "../content.config.ts";
+import { buildAdaptPayload } from "../lib/cvData";
 import profile from "../profile";
 import "../styles/global.css";
 
@@ -28,6 +29,7 @@ const aboutEntries = await getCollection("about");
 const experienceEntries = await getCollection("experience");
 const projectsEntries = await getCollection("projects");
 const educationEntries = await getCollection("education");
+const highlightsEntries = await getCollection("highlights");
 
 // Validate skills.json shape at build time — throws with a clear Zod error if malformed.
 const skillsData = skillsSchema.parse(skillsRaw) as unknown as SkillsData;
@@ -60,6 +62,21 @@ const initialFsByLang = {
 
 // Valida simetría de paths entre ambos idiomas. Lanza en build si divergen.
 assertFsParity(initialFsByLang.es, initialFsByLang.en);
+
+// Payload que el modal `adapt` envía al backend para pedir la adaptación IA.
+// Se construye en build time (contenido = content collections) y se pasa como
+// prop; el runtime solo elige el idioma activo antes de enviar el POST.
+const adaptCollections = {
+  about: aboutEntries.map(toContentEntry),
+  highlights: highlightsEntries.map(toContentEntry),
+  experience: experienceEntries.map(toContentEntry),
+  projects: projectsEntries.map(toContentEntry),
+  skillsJson: skillsData,
+};
+const cvDataByLang = {
+  es: buildAdaptPayload(adaptCollections, "es"),
+  en: buildAdaptPayload(adaptCollections, "en"),
+};
 
 const baseUrl = `https://${profile.domain}`;
 ---
@@ -126,6 +143,7 @@ const baseUrl = `https://${profile.domain}`;
           githubUser: profile.social.githubUser,
         }}
         turnstileSiteKey={turnstileSiteKey}
+        cvDataByLang={cvDataByLang}
       />
     </main>
 

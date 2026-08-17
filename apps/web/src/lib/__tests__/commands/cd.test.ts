@@ -15,7 +15,8 @@ function asCdResult(r: CommandResult) {
     r.effect === "downloadPdf" ||
     r.effect === "fetchRepos" ||
     r.effect === "setSound" ||
-    r.effect === "openContact"
+    r.effect === "openContact" ||
+    r.effect === "openAdapt"
   ) {
     throw new Error(`cd returned unexpected effect: ${r.effect}`);
   }

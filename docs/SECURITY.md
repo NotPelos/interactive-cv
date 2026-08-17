@@ -51,10 +51,15 @@
 
 ### Backend (Spring Boot)
 - **Spring Security** activo aunque no haya auth — para gestionar headers y CORS.
-- Endpoints públicos: `GET /api/cv/pdf`, `GET /api/visits`, `POST /api/contact`, `GET /actuator/health`.
+- Endpoints públicos: `GET /api/visits`, `POST /api/contact`, `POST /api/cv/adapt`, `GET /actuator/health`. `/api/cv/pdf` fue retirado (el PDF ahora se genera estático en CI con Typst, ver DEPLOYMENT.md).
 - Resto: `denyAll()`.
 - **Rate limiting** con Bucket4j (60 req/min por IP en `/cv/pdf`, **5 req/min** en `/contact`).
 - Validación con `jakarta.validation` en cualquier parámetro.
+- **CV Adapter (`POST /api/cv/adapt`)**:
+  - Rate limit propio de 10 req/min por IP (`AdaptRateLimitConfig`). Sin Turnstile por diseño: no manda mensajes ni deja rastro externo, el único abuso posible es agotar la cuota de Gemini (cubierto por el free tier de 1500 req/día).
+  - Prompt no logea el body del CV ni la descripción del puesto: solo tamaños en chars y match score de la respuesta.
+  - `GEMINI_API_KEY` fail-closed: sin ella el endpoint devuelve 502 sin exponer detalles.
+  - Índices devueltos por el LLM se clampean (rango + max N + dedupe) antes de llegar al frontend — el UI nunca recibe un índice inválido.
 - **Contact form (`POST /api/contact`)**:
   - Token de **Cloudflare Turnstile** obligatorio y verificado server-side contra `challenges.cloudflare.com/turnstile/v0/siteverify`. Sin token válido → 403. Sin `TURNSTILE_SECRET_KEY` en env → fail-closed (rechaza todas las peticiones), evitando "bypass silencioso" por misconfig.
   - Email dispatched vía **Resend**. Cuerpo del email siempre en `text/plain` (no HTML) para eliminar cualquier XSS foothold en el cliente de correo del receptor.

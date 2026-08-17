@@ -18,6 +18,9 @@ primary_region = "cdg"   # París (mad/Madrid está deprecada en Fly.io 2026)
   #   RESEND_FROM              — opcional; default onboarding@resend.dev
   #   CONTACT_TO_EMAIL         — donde reciben los mensajes del formulario
   # Sin cualquiera de los tres primeros, /api/contact devuelve 403 o 502.
+  # Adaptador IA (POST /api/cv/adapt):
+  #   GEMINI_API_KEY           — de aistudio.google.com/apikey
+  # Sin ella /api/cv/adapt devuelve 502 upstream_failed.
 
 [http_service]
   internal_port = 8080

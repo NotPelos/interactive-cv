@@ -42,10 +42,11 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 ).permitAll()
                 // MVP public endpoints
-                .requestMatchers("/api/cv/pdf").permitAll()
                 .requestMatchers("/api/visits").permitAll()
                 // Contact form — POST, protected by Turnstile + Bucket4j
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contact").permitAll()
+                // CV Adapt — POST, protected by Bucket4j (10 req/min) + Gemini quota
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/cv/adapt").permitAll()
                 // Everything else is denied by default
                 .anyRequest().denyAll()
             )

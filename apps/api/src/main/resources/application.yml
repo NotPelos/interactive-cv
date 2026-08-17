@@ -28,6 +28,11 @@ resend:
 contact:
   to: ${CONTACT_TO_EMAIL:}
 
+# Google Gemini API — usada por /api/cv/adapt. Sin API key, el endpoint
+# devuelve 502 upstream_failed (fail-closed).
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+
 # Actuator — expose only health and info, never env/beans/mappings
 management:
   endpoints:

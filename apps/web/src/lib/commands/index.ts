@@ -20,6 +20,7 @@ import ai from "./ai.js";
 import sound from "./sound.js";
 import stats from "./stats.js";
 import contact from "./contact.js";
+import adapt from "./adapt.js";
 import { sudo, rm, exit, vim, emacs, hack, hello } from "./eastereggs.js";
 
 export const commandRegistry: Map<string, Command> = new Map([
@@ -44,6 +45,7 @@ export const commandRegistry: Map<string, Command> = new Map([
   ["sound", sound],
   ["stats", stats],
   ["contact", contact],
+  ["adapt", adapt],
   // Easter eggs — listed here so man + tab completion work, but not in help output
   ["sudo", sudo],
   ["rm", rm],

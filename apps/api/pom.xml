@@ -24,8 +24,6 @@
         <maven.compiler.release>21</maven.compiler.release>
         <springdoc.version>2.6.0</springdoc.version>
         <!-- Pinned dependency versions -->
-        <openpdf.version>1.3.30</openpdf.version>
-        <commonmark.version>0.22.0</commonmark.version>
         <bucket4j.version>8.10.1</bucket4j.version>
         <!--
             Caffeine 3.1.x — Apache 2.0. Bounded LRU cache for Bucket4j rate-limit
@@ -80,30 +78,9 @@
         </dependency>
 
         <!--
-            OpenPDF 1.3.x — LGPL license, fork of iText 2.
-            Chosen over iText 5+ (AGPL) and Apache PDFBox (no layout engine).
-            Generates the CV PDF on-demand without Chromium.
-        -->
-        <dependency>
-            <groupId>com.github.librepdf</groupId>
-            <artifactId>openpdf</artifactId>
-            <version>${openpdf.version}</version>
-        </dependency>
-
-        <!--
-            commonmark-java — LGPL. Parses Markdown content files into an AST
-            so PdfGenerator can extract structured text without regex hacks.
-        -->
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark</artifactId>
-            <version>${commonmark.version}</version>
-        </dependency>
-
-        <!--
-            Bucket4j core — Apache 2.0. In-process rate limiter for /api/cv/pdf.
-            No Redis/Hazelcast needed for MVP — single instance on Fly.io.
-            Rate: 60 req/min per IP. Documented in RateLimitConfig.
+            Bucket4j core — Apache 2.0. In-process rate limiter para /api/contact
+            (5 req/min) y futuros endpoints. Sin Redis/Hazelcast — single instance
+            en Fly.io. Documentado en ContactRateLimitConfig.
         -->
         <dependency>
             <groupId>com.bucket4j</groupId>

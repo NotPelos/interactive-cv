@@ -55,6 +55,8 @@ Crear `apps/web/public/_headers` con la CSP de [SECURITY.md](SECURITY.md).
   - `RESEND_API_KEY` — de [resend.com/api-keys](https://resend.com/api-keys). Sin él, `/api/contact` devuelve 502.
   - `RESEND_FROM` — opcional. Default `onboarding@resend.dev` (dominio sandbox de Resend, sin verificar). Para usar `hi@notpelos.dev` u otro, verifica el dominio en Resend primero.
   - `CONTACT_TO_EMAIL` — dirección donde llegan los mensajes (típicamente el email del owner).
+- **CV Adapter** (`POST /api/cv/adapt`):
+  - `GEMINI_API_KEY` — de [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Free tier: 15 RPM / 1500 RPD (más que suficiente para el CV). Sin key el endpoint devuelve 502 upstream_failed.
 - **Frontend Turnstile** (Cloudflare Pages env, misma UI que la site key del secret):
   - `PUBLIC_TURNSTILE_SITE_KEY` — la "Site key" pública del mismo widget. Va en el bundle JS del cliente.
 
