@@ -1052,8 +1052,13 @@ export default function Terminal({
   const isBlocked = isNavigating || isFetching;
 
   const handleContainerClick = useCallback(() => {
+    // Cuando el modal de contacto está abierto, NO robar el foco al terminal:
+    // el usuario debe poder escribir en los inputs del modal. El modal cubre
+    // toda la pantalla, así que este click seguramente venía a través del
+    // overlay — lo tratamos como "no hacer nada".
+    if (state.contactOpen) return;
     inputRef.current?.focus();
-  }, []);
+  }, [state.contactOpen]);
 
   const activeFs = state.fs;
 

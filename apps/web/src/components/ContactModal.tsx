@@ -156,6 +156,15 @@ export default function ContactModal({ lang, apiBaseUrl, turnstileSiteKey, onClo
   const [turnstileReady, setTurnstileReady] = useState(false);
   const turnstileHostRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // Autofocus del primer input al abrir. Sin esto, el input del terminal
+  // (que estaba enfocado antes) se queda con el foco y las teclas van allí.
+  useEffect(() => {
+    // requestAnimationFrame para asegurar que el input ya está pintado.
+    const raf = requestAnimationFrame(() => firstInputRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Cargar script Turnstile + renderizar widget al montar
   useEffect(() => {
@@ -305,6 +314,7 @@ export default function ContactModal({ lang, apiBaseUrl, turnstileSiteKey, onClo
             <div class="mb-3">
               <label class={labelCls} htmlFor="cf-name">{t.name}</label>
               <input
+                ref={firstInputRef}
                 id="cf-name" type="text" class={inputCls}
                 value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)}
                 maxLength={80} required
