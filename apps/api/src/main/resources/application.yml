@@ -11,6 +11,23 @@ app:
   cors:
     allowed-origin: ${ALLOWED_ORIGIN:https://notpelos.pages.dev}
 
+# Cloudflare Turnstile — CAPTCHA invisible. Site key va en el bundle público
+# (Astro PUBLIC_TURNSTILE_SITE_KEY); secret solo en el server. Sin secret,
+# TurnstileVerifier rechaza todas las peticiones (fail-closed).
+turnstile:
+  secret-key: ${TURNSTILE_SECRET_KEY:}
+
+# Resend — proveedor de email transaccional. Api key es secreta.
+# `from` puede ser onboarding@resend.dev (sandbox de Resend, sin verificar dominio)
+# o algo como "NotPelos <hi@notpelos.dev>" cuando haya dominio verificado.
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from: ${RESEND_FROM:onboarding@resend.dev}
+
+# Destino de los mensajes del formulario de contacto.
+contact:
+  to: ${CONTACT_TO_EMAIL:}
+
 # Actuator — expose only health and info, never env/beans/mappings
 management:
   endpoints:

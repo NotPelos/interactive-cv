@@ -19,6 +19,10 @@ const endpoints: Endpoints = {
   worker: import.meta.env.PUBLIC_WORKER_URL ?? "",
 };
 
+// Cloudflare Turnstile — clave pública inyectada en el bundle en build time.
+// Sin ella, el ContactModal deshabilita el botón enviar (el widget nunca carga).
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
 // Build virtual FS from content collections at build/SSR time.
 const aboutEntries = await getCollection("about");
 const experienceEntries = await getCollection("experience");
@@ -121,6 +125,7 @@ const baseUrl = `https://${profile.domain}`;
           githubUrl: profile.social.githubUrl,
           githubUser: profile.social.githubUser,
         }}
+        turnstileSiteKey={turnstileSiteKey}
       />
     </main>
 

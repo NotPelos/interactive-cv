@@ -51,10 +51,16 @@
 
 ### Backend (Spring Boot)
 - **Spring Security** activo aunque no haya auth — para gestionar headers y CORS.
-- Endpoints públicos del MVP: `GET /api/cv/pdf`, `GET /api/visits`, `GET /actuator/health`.
+- Endpoints públicos: `GET /api/cv/pdf`, `GET /api/visits`, `POST /api/contact`, `GET /actuator/health`.
 - Resto: `denyAll()`.
-- **Rate limiting** con Bucket4j (60 req/min por IP en `/cv/pdf`).
+- **Rate limiting** con Bucket4j (60 req/min por IP en `/cv/pdf`, **5 req/min** en `/contact`).
 - Validación con `jakarta.validation` en cualquier parámetro.
+- **Contact form (`POST /api/contact`)**:
+  - Token de **Cloudflare Turnstile** obligatorio y verificado server-side contra `challenges.cloudflare.com/turnstile/v0/siteverify`. Sin token válido → 403. Sin `TURNSTILE_SECRET_KEY` en env → fail-closed (rechaza todas las peticiones), evitando "bypass silencioso" por misconfig.
+  - Email dispatched vía **Resend**. Cuerpo del email siempre en `text/plain` (no HTML) para eliminar cualquier XSS foothold en el cliente de correo del receptor.
+  - Origin del email = `RESEND_FROM` (dominio propio verificado o sandbox `onboarding@resend.dev`). `reply_to` = el email del emisor → el receptor responde directo.
+  - Rate limit compartido con Caffeine para acotar memoria (10k IPs, evict 10min). Ver `ContactRateLimitConfig`.
+  - Logs sin PII: solo severity + código de error. Ni email ni body ni token nunca se loguean.
 - Headers HTTP de seguridad equivalentes a los del frontend.
 - Dependencias auditadas con OWASP Dependency-Check en CI.
 - Sin endpoints `/actuator/*` expuestos salvo `health` y `info` (sin git/env).

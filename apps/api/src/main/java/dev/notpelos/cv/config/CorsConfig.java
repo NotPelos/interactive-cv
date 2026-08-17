@@ -29,7 +29,9 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(allowedOrigin));
-        config.setAllowedMethods(List.of("GET", "OPTIONS"));
+        // POST added for /api/contact. OPTIONS is required for the browser preflight
+        // that Chrome/Firefox issue before any non-simple POST (Content-Type: application/json).
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         // Minimum privilege: only the headers actually needed by the frontend.
         // Wildcard ("*") is intentionally avoided per SECURITY.md.
         config.setAllowedHeaders(List.of("Content-Type", "Accept"));

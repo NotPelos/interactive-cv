@@ -44,6 +44,8 @@ public class SecurityConfig {
                 // MVP public endpoints
                 .requestMatchers("/api/cv/pdf").permitAll()
                 .requestMatchers("/api/visits").permitAll()
+                // Contact form — POST, protected by Turnstile + Bucket4j
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contact").permitAll()
                 // Everything else is denied by default
                 .anyRequest().denyAll()
             )

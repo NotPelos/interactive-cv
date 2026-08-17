@@ -3,10 +3,12 @@
 #   island Preact. Alternativa segura: Astro experimental.csp con hashes,
 #   pendiente de migrar (TODO documentado en SECURITY.md).
 # font-src data:: algunas CSS de @fontsource embeben woff2 como data URIs.
+# Turnstile: script y iframe desde challenges.cloudflare.com, más el POST del
+#   formulario contact a *.fly.dev (ya cubierto por el connect-src previo).
 # El XSS está mitigado por interpolación JSX en Preact (escape automático);
 # todo input del user va por textContent, sin innerHTML/eval en el bundle.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self' data:; connect-src 'self' https://*.fly.dev https://*.workers.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://avatars.githubusercontent.com data:; font-src 'self' data:; connect-src 'self' https://*.fly.dev https://*.workers.dev https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()

@@ -10,6 +10,7 @@ import { makeT } from "../lib/i18n/t.js";
 import { detectLang, LANG_STORAGE_KEY } from "../lib/i18n/detect.js";
 import { readSoundStorage } from "../lib/commands/sound.js";
 import MatrixRain from "./MatrixRain.js";
+import ContactModal from "./ContactModal.js";
 
 // ---------------------------------------------------------------------------
 // Validated repo shape from Worker response
@@ -81,6 +82,8 @@ interface TerminalState {
   social: { linkedinUrl: string; githubUrl: string; githubUser: string };
   // Visit counters — populated by a one-shot fetch to the worker on mount.
   visits: { total: number; today: number } | null;
+  // Contact form overlay abierto por el comando `contact`
+  contactOpen: boolean;
 }
 
 type Action =
@@ -98,6 +101,8 @@ type Action =
   | { type: "START_MATRIX" }
   | { type: "STOP_MATRIX" }
   | { type: "SET_VISITS"; visits: { total: number; today: number } }
+  | { type: "OPEN_CONTACT" }
+  | { type: "CLOSE_CONTACT" }
   // Appends neofetch output after the welcome banner on initial boot — no prompt echo.
   | { type: "BOOT_NEOFETCH"; lines: Line[] };
 
@@ -151,6 +156,7 @@ function makeInitialState({ defaultLang, initialFs, initialSoundEnabled, promptU
     neofetchHost,
     social,
     visits: null,
+    contactOpen: false,
   };
 }
 
@@ -230,6 +236,12 @@ function reducer(
 
     case "SET_VISITS":
       return { ...state, visits: action.visits };
+
+    case "OPEN_CONTACT":
+      return { ...state, contactOpen: true };
+
+    case "CLOSE_CONTACT":
+      return { ...state, contactOpen: false };
 
     case "FETCH_DONE":
       return { ...state, pendingFetch: null, pendingFetchPayload: null };
@@ -440,6 +452,18 @@ function reducer(
         };
       }
 
+      if (result.effect === "openContact") {
+        return {
+          ...state,
+          output: [...state.output, promptLine, ...result.lines],
+          history: newHistory,
+          input: "",
+          historyIndex: -1,
+          pendingNavigation: null,
+          contactOpen: true,
+        };
+      }
+
       if (result.effect === "fetchRepos") {
         return {
           ...state,
@@ -632,6 +656,8 @@ interface TerminalProps {
   neofetchHost?: string;
   /** Social links passed to AI command responses. */
   social?: { linkedinUrl: string; githubUrl: string; githubUser: string };
+  /** Cloudflare Turnstile site key para el widget del formulario de contacto. */
+  turnstileSiteKey?: string;
 }
 
 const FALLBACK_FS_BY_LANG: Record<Lang, Record<string, FsNode>> = {
@@ -655,6 +681,7 @@ export default function Terminal({
   promptUser = "user@cv",
   neofetchHost = "unknown",
   social = FALLBACK_SOCIAL,
+  turnstileSiteKey = "",
 }: TerminalProps = {}) {
   const fsByLang = initialFsByLang ?? FALLBACK_FS_BY_LANG;
 
@@ -1126,6 +1153,16 @@ export default function Terminal({
     >
       {/* Matrix rain overlay */}
       {state.matrixActive && <MatrixRain />}
+
+      {/* Contact form overlay — se abre con el comando `contact` */}
+      {state.contactOpen && (
+        <ContactModal
+          lang={state.lang}
+          apiBaseUrl={endpoints.api}
+          turnstileSiteKey={turnstileSiteKey}
+          onClose={() => dispatch({ type: "CLOSE_CONTACT" })}
+        />
+      )}
 
       {/* Output history — role="log" + aria-live para lectores de pantalla */}
       <div class="pb-2" role="log" aria-live="polite" aria-atomic="false">

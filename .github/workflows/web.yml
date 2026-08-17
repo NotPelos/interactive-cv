@@ -79,9 +79,13 @@ jobs:
 
       - name: Build (astro build)
         # PUBLIC_* env vars se inyectan en el bundle (Astro las lee en build time).
+        # PUBLIC_TURNSTILE_SITE_KEY viene de GitHub Actions Vars (no secret — es
+        # pública por diseño, va en el bundle JS del cliente). Si no está
+        # definida, el formulario `contact` no envía (el botón queda deshabilitado).
         env:
           PUBLIC_WORKER_URL: "https://notpelos-api.xpelos23.workers.dev"
           PUBLIC_API_URL: "https://notpelos-cv-api.fly.dev"
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
         run: pnpm --filter web build
 
       - name: Audit de dependencias (nivel critical, solo prod)
