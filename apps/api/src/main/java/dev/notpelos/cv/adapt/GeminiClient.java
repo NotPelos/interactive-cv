@@ -30,12 +30,16 @@ import java.util.List;
 public class GeminiClient {
 
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
-    // gemini-3.6-flash — modelo Flash actual. gemini-2.0-flash quedó deprecado
-    // por Google en Agosto 2026 (aviso de deprecación en la propia respuesta 404).
-    private static final String MODEL = "gemini-3.6-flash";
+    // gemini-flash-latest — alias que Google mantiene apuntando al Flash actual.
+    // Evita fallos por deprecaciones (2.0-flash quedó fuera en Ago 2026). Usar
+    // el alias es equivalente a pinnear al último stable, sin necesidad de
+    // actualizar el código cada release.
+    private static final String MODEL = "gemini-flash-latest";
     private static final String ENDPOINT_TEMPLATE =
         "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    // 60s para dar margen al "thinking" implícito de los modelos 2.5+/3.x cuando
+    // el prompt es grande (nuestro CV+job description ≈ 10k chars).
+    private static final Duration TIMEOUT = Duration.ofSeconds(60);
 
     private final WebClient webClient;
     private final ObjectMapper mapper;
