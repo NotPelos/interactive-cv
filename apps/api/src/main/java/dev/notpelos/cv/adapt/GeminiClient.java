@@ -137,23 +137,21 @@ public class GeminiClient {
             return text;
         } catch (IllegalStateException e) {
             throw e;
-        } catch (Exception e) {
-            // Reactor puede envolver el WebClientResponseException dentro de un
-            // RetryExhaustedException tras agotar reintentos. Buscamos el WCRE
-            // en toda la cadena de causes para preservar el status HTTP real.
-            WebClientResponseException wcre = findWebClientException(e);
+        } catch (Throwable t) {
+            // Reactor puede propagar tanto Exception como Error (y wrappings raros).
+            // Catch Throwable para no dejar escapar nada al controller.
+            StringBuilder chain = new StringBuilder();
+            for (Throwable c = t; c != null && chain.length() < 500; c = c.getCause()) {
+                chain.append(c.getClass().getSimpleName()).append("(").append(c.getMessage()).append(") -> ");
+            }
+            log.warn("gemini_caught class={} chain={}", t.getClass().getName(), chain);
+
+            WebClientResponseException wcre = findWebClientException(t);
             if (wcre != null) {
                 throw new IllegalStateException(
                     "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
             }
-            // Log de diagnóstico: la clase exacta de la excepción y su cadena
-            // completa de causes, para averiguar por qué el wcre no se encuentra.
-            StringBuilder chain = new StringBuilder();
-            for (Throwable t = e; t != null && chain.length() < 500; t = t.getCause()) {
-                chain.append(t.getClass().getSimpleName()).append("(").append(t.getMessage()).append(") -> ");
-            }
-            log.warn("gemini_call_failed chain={}", chain);
-            throw new IllegalStateException("gemini_call_failed", e);
+            throw new IllegalStateException("gemini_call_failed", t);
         }
     }
 
