@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
@@ -135,22 +136,33 @@ public class GeminiClient {
                 throw new IllegalStateException("gemini_empty_text");
             }
             return text;
-        } catch (IllegalStateException e) {
-            throw e;
         } catch (Throwable t) {
-            // Reactor puede propagar tanto Exception como Error (y wrappings raros).
-            // Catch Throwable para no dejar escapar nada al controller.
-            StringBuilder chain = new StringBuilder();
-            for (Throwable c = t; c != null && chain.length() < 500; c = c.getCause()) {
-                chain.append(c.getClass().getSimpleName()).append("(").append(c.getMessage()).append(") -> ");
+            // Reactor 3.4+: Exceptions.retryExhausted() devuelve un IllegalStateException
+            // (no un tipo dedicado), así que NO podemos usar catch (IllegalStateException)
+            // como short-circuit — nos comería el retry exhaust y el fallback nunca
+            // se activaría. Detectamos retry-exhausted específicamente vía la utility
+            // de Reactor y buscamos el WCRE original en la cadena de causes.
+            //
+            // Solo re-lanzamos directo si ya es una IllegalStateException NUESTRA
+            // (message empieza con "gemini_"): esos casos no necesitan re-procesado.
+            if (t instanceof IllegalStateException ise
+                && ise.getMessage() != null
+                && ise.getMessage().startsWith("gemini_")) {
+                throw ise;
             }
-            log.warn("gemini_caught class={} chain={}", t.getClass().getName(), chain);
 
             WebClientResponseException wcre = findWebClientException(t);
             if (wcre != null) {
                 throw new IllegalStateException(
                     "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
             }
+            // Diagnostic log: útil si aparecen wrappings raros de Reactor futuros.
+            StringBuilder chain = new StringBuilder();
+            for (Throwable c = t; c != null && chain.length() < 500; c = c.getCause()) {
+                chain.append(c.getClass().getSimpleName()).append("(").append(c.getMessage()).append(") -> ");
+            }
+            log.warn("gemini_call_failed retryExhausted={} chain={}",
+                Exceptions.isRetryExhausted(t), chain);
             throw new IllegalStateException("gemini_call_failed", t);
         }
     }
