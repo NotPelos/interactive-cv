@@ -137,20 +137,28 @@ public class GeminiClient {
             return text;
         } catch (IllegalStateException e) {
             throw e;
-        } catch (WebClientResponseException wcre) {
-            // Ha agotado los retries — sube como upstream_XXX para que el controller lo mape a 502.
-            throw new IllegalStateException(
-                "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
         } catch (Exception e) {
-            // Reactor envuelve algunas excepciones (timeout, RetryExhausted…).
-            Throwable cause = e.getCause();
-            if (cause instanceof WebClientResponseException wcre) {
+            // Reactor puede envolver el WebClientResponseException dentro de un
+            // RetryExhaustedException tras agotar reintentos. Buscamos el WCRE
+            // en toda la cadena de causes para preservar el status HTTP real.
+            WebClientResponseException wcre = findWebClientException(e);
+            if (wcre != null) {
                 throw new IllegalStateException(
                     "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
             }
             log.warn("gemini_call_failed: {}", e.getClass().getSimpleName());
             throw new IllegalStateException("gemini_call_failed", e);
         }
+    }
+
+    /** Recorre la cadena de causes buscando un WebClientResponseException. */
+    private static WebClientResponseException findWebClientException(Throwable t) {
+        // Guard contra ciclos (raro pero posible con excepciones custom).
+        for (int i = 0; i < 10 && t != null; i++) {
+            if (t instanceof WebClientResponseException wcre) return wcre;
+            t = t.getCause();
+        }
+        return null;
     }
 
     /** Convenience: parse el JSON de la respuesta al tipo indicado. */
