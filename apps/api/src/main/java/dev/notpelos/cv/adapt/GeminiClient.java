@@ -30,7 +30,9 @@ import java.util.List;
 public class GeminiClient {
 
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
-    private static final String MODEL = "gemini-2.0-flash";
+    // gemini-3.6-flash — modelo Flash actual. gemini-2.0-flash quedó deprecado
+    // por Google en Agosto 2026 (aviso de deprecación en la propia respuesta 404).
+    private static final String MODEL = "gemini-3.6-flash";
     private static final String ENDPOINT_TEMPLATE =
         "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
