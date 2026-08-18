@@ -146,7 +146,13 @@ public class GeminiClient {
                 throw new IllegalStateException(
                     "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
             }
-            log.warn("gemini_call_failed: {}", e.getClass().getSimpleName());
+            // Log de diagnóstico: la clase exacta de la excepción y su cadena
+            // completa de causes, para averiguar por qué el wcre no se encuentra.
+            StringBuilder chain = new StringBuilder();
+            for (Throwable t = e; t != null && chain.length() < 500; t = t.getCause()) {
+                chain.append(t.getClass().getSimpleName()).append("(").append(t.getMessage()).append(") -> ");
+            }
+            log.warn("gemini_call_failed chain={}", chain);
             throw new IllegalStateException("gemini_call_failed", e);
         }
     }
