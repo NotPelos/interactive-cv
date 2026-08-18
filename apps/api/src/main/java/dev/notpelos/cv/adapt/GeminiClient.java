@@ -11,10 +11,13 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Cliente minimal para la Gemini API (generativeLanguage).
@@ -30,16 +33,20 @@ import java.util.List;
 public class GeminiClient {
 
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
-    // gemini-flash-latest — alias que Google mantiene apuntando al Flash actual.
-    // Evita fallos por deprecaciones (2.0-flash quedó fuera en Ago 2026). Usar
-    // el alias es equivalente a pinnear al último stable, sin necesidad de
-    // actualizar el código cada release.
-    private static final String MODEL = "gemini-flash-latest";
+    // Modelo principal: gemini-flash-latest (alias moving de Google al Flash actual,
+    // evita fallos por deprecaciones cuando salen versiones nuevas).
+    // Modelo fallback: gemini-flash-lite-latest — más pequeño, suele estar menos
+    // congestionado. Se usa automáticamente si el principal devuelve 503 tras retries.
+    private static final String MODEL_PRIMARY = "gemini-flash-latest";
+    private static final String MODEL_FALLBACK = "gemini-flash-lite-latest";
     private static final String ENDPOINT_TEMPLATE =
         "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
     // 60s para dar margen al "thinking" implícito de los modelos 2.5+/3.x cuando
     // el prompt es grande (nuestro CV+job description ≈ 10k chars).
     private static final Duration TIMEOUT = Duration.ofSeconds(60);
+    // Statuses transitorios donde reintentar tiene sentido — el resto (400, 401,
+    // 404) son errores nuestros o de configuración y no mejoran con retry.
+    private static final Set<Integer> TRANSIENT_STATUSES = Set.of(429, 500, 502, 503, 504);
 
     private final WebClient webClient;
     private final ObjectMapper mapper;
@@ -60,7 +67,7 @@ public class GeminiClient {
 
     /**
      * Llama a Gemini y devuelve el texto JSON generado (según responseSchema).
-     * El caller es responsable de parsear ese JSON al tipo esperado.
+     * Con fallback al modelo lite si el principal está saturado (503) tras retries.
      */
     public String generateJson(String systemInstruction, String userPrompt, Object responseSchema) {
         if (apiKey == null || apiKey.isBlank()) {
@@ -74,23 +81,46 @@ public class GeminiClient {
         );
 
         try {
+            return callModel(MODEL_PRIMARY, req);
+        } catch (IllegalStateException e) {
+            // Fallback solo si el principal está saturado (503). Otros errores
+            // (400, 404, key inválida) NO se benefician de cambiar de modelo.
+            if (e.getMessage() != null && e.getMessage().equals("gemini_upstream_503")) {
+                log.info("gemini_primary_saturated using_fallback={}", MODEL_FALLBACK);
+                return callModel(MODEL_FALLBACK, req);
+            }
+            throw e;
+        }
+    }
+
+    private String callModel(String model, GeminiRequest req) {
+        try {
             GeminiResponse resp = webClient.post()
-                .uri(String.format(ENDPOINT_TEMPLATE, MODEL, apiKey))
+                .uri(String.format(ENDPOINT_TEMPLATE, model, apiKey))
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, r -> r.bodyToMono(String.class)
                     .defaultIfEmpty("")
                     .flatMap(body -> {
-                        // Log solo status + primeras 200 chars del body para debug;
-                        // nunca el prompt completo (podría contener info del CV).
                         String snippet = body.length() > 200 ? body.substring(0, 200) : body;
                         log.warn("gemini_error status={} body_snippet={}", r.statusCode().value(), snippet);
-                        return Mono.error(new IllegalStateException(
-                            "gemini_upstream_" + r.statusCode().value()));
+                        return Mono.error(new WebClientResponseException(
+                            r.statusCode().value(),
+                            "gemini_upstream_" + r.statusCode().value(),
+                            r.headers().asHttpHeaders(), body.getBytes(), null));
                     }))
                 .bodyToMono(GeminiResponse.class)
                 .timeout(TIMEOUT)
+                // Retry en 429/500/502/503/504 (transients). Backoff exponencial
+                // desde 500ms para no martillar cuando Gemini está saturado.
+                .retryWhen(Retry.backoff(2, Duration.ofMillis(500))
+                    .filter(e -> e instanceof WebClientResponseException wcre
+                        && TRANSIENT_STATUSES.contains(wcre.getStatusCode().value()))
+                    .doBeforeRetry(sig -> log.info(
+                        "gemini_retry attempt={} cause={}",
+                        sig.totalRetries() + 1,
+                        sig.failure() instanceof WebClientResponseException w ? w.getStatusCode().value() : "?")))
                 .block();
 
             if (resp == null || resp.candidates == null || resp.candidates.isEmpty()) {
@@ -107,7 +137,17 @@ public class GeminiClient {
             return text;
         } catch (IllegalStateException e) {
             throw e;
+        } catch (WebClientResponseException wcre) {
+            // Ha agotado los retries — sube como upstream_XXX para que el controller lo mape a 502.
+            throw new IllegalStateException(
+                "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
         } catch (Exception e) {
+            // Reactor envuelve algunas excepciones (timeout, RetryExhausted…).
+            Throwable cause = e.getCause();
+            if (cause instanceof WebClientResponseException wcre) {
+                throw new IllegalStateException(
+                    "gemini_upstream_" + wcre.getStatusCode().value(), wcre);
+            }
             log.warn("gemini_call_failed: {}", e.getClass().getSimpleName());
             throw new IllegalStateException("gemini_call_failed", e);
         }
